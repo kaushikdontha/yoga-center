@@ -31,8 +31,11 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // --- MongoDB Setup ---
+const mongoUri =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://gang2024gang:fvqTmwTxLLUxr69S@cluster0.h92s2c9.mongodb.net/yoga-center?retryWrites=true&w=majority";
 mongoose
-  .connect("mongodb://127.0.0.1:27017/yoga-center")
+  .connect(mongoUri)
   .then(() => {
     console.log("Connected to MongoDB successfully");
   })
@@ -115,7 +118,7 @@ const videoUpload = multer({
     }
   },
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit
+    fileSize: 1000 * 1024 * 1024, // 100MB limit
   },
 });
 
