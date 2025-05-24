@@ -30,6 +30,23 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// Serve frontend build (dist) for production
+const distPath = path.join(__dirname, "dist");
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  app.get("/*", (req, res, next) => {
+    // Only handle non-API routes
+    if (
+      !req.originalUrl.startsWith("/api") &&
+      !req.originalUrl.startsWith("/uploads")
+    ) {
+      res.sendFile(path.join(distPath, "index.html"));
+    } else {
+      next();
+    }
+  });
+}
+
 // --- MongoDB Setup ---
 const mongoUri =
   process.env.MONGODB_URI ||
