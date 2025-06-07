@@ -1,4 +1,4 @@
-# Yoga Center Website
+git remote add origin git@github.com:kaushikdontha/yoga-center.git# Yoga Center Website
 
 A modern, responsive yoga center website built with React, Vite, and Tailwind CSS.
 
