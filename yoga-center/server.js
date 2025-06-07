@@ -251,13 +251,16 @@ app.use('/uploads', (req, res, next) => {
   });
 });
 
-// Frontend route handling - only for non-API and non-upload routes
-app.use((req, res, next) => {
+// Serve static frontend (production build)
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
+
+// For any other route, serve index.html (SPA fallback)
+app.get('*', (req, res) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
-    return next();
+    return res.status(404).end();
   }
-  // Only redirect if it's not an API or upload request
-  res.redirect(302, `http://localhost:5173${req.path}`);
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Error handling middleware

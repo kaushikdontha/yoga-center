@@ -10,7 +10,7 @@ const AdminQueries = () => {
       try {
         setLoading(true);
         setError("");
-        const res = await fetch("http://localhost:5000/api/contacts");
+        const res = await fetch("/api/contacts");
         if (!res.ok) throw new Error("Failed to fetch queries");
         const data = await res.json();
         setQueries(data);

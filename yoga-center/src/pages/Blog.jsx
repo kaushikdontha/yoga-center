@@ -7,7 +7,7 @@ const Gallery = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/photos")
+      .get("/api/photos")
       .then((res) => setPhotos(res.data))
       .catch(() => setError("Failed to fetch gallery photos."));
   }, []);
@@ -25,7 +25,7 @@ const Gallery = () => {
           >
             <div className="aspect-square">
               <img
-                src={`http://localhost:5000${photo.url}`}
+                src={photo.url}
                 alt={photo.filename}
                 className="w-full h-full object-cover"
               />

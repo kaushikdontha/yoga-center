@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import axios from "axios";
 
 const AUTO_PLAY_INTERVAL = 3500; // 3.5 seconds
 
@@ -6,53 +7,147 @@ const Carousel = () => {
   const [images, setImages] = useState([]);
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [imageLoadErrors, setImageLoadErrors] = useState({});
   const intervalRef = useRef(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    // Fetch gallery images from the backend
-    const fetchImages = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(
-          "http://localhost:5000/api/photos?category=gallery"
-        );
-        const data = await res.json();
-        setImages(data.photos || data);
-      } catch (err) {
-        setImages([]);
-      } finally {
-        setLoading(false);
+    // Cleanup function to prevent memory leaks
+    return () => {
+      mountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
-    fetchImages();
   }, []);
 
   useEffect(() => {
-    if (!images.length) return;
-    if (isPaused) return;
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const fetchImages = async () => {
+      console.log('[Carousel] Initiating fetchImages...');
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log('[Carousel] Making API request to:', `/api/photos`);
+        const response = await axios.get(`/api/photos`, {
+          signal: controller.signal,
+          timeout: 5000 // 5 second timeout
+        });
+
+        if (!isMounted) return;
+
+        // Process the images to ensure URLs are correct
+        const processedImages = (response.data.photos || []).map(photo => {
+          const fullUrl = photo.url.startsWith('http') ? photo.url : `${API_BASE_URL}${photo.url}`;
+          console.log('[Carousel] Processing photo URL:', fullUrl, 'Original photo object:', photo);
+          return {
+            ...photo,
+            url: fullUrl
+          };
+        });
+
+        console.log('Processed carousel images (final setImages value):', processedImages);
+        setImages(processedImages);
+      } catch (err) {
+        if (!isMounted) return;
+        console.error('Error fetching carousel images:', err);
+        setError('Failed to load images. Please try again later.');
+        setImages([]);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchImages();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!images.length || isPaused || !mountedRef.current) return;
+
     intervalRef.current = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length);
+      if (mountedRef.current) {
+        setCurrent(prev => (prev + 1) % images.length);
+      }
     }, AUTO_PLAY_INTERVAL);
-    return () => clearInterval(intervalRef.current);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [images, isPaused]);
 
-  const next = () => setCurrent((prev) => (prev + 1) % images.length);
-  const prev = () =>
-    setCurrent((prev) => (prev - 1 + images.length) % images.length);
+  const next = () => setCurrent(prev => (prev + 1) % images.length);
+  const prev = () => setCurrent(prev => (prev - 1 + images.length) % images.length);
 
-  if (loading)
+  const handleImageError = (imageId) => {
+    setImageLoadErrors(prev => ({
+      ...prev,
+      [imageId]: true
+    }));
+  };
+
+  const getImageUrl = (image) => {
+    if (imageLoadErrors[image._id]) {
+      return `${API_BASE_URL}/uploads/placeholder.jpg`;
+    }
+
+    if (image.url.startsWith('http')) {
+      console.log('[Carousel] getImageUrl returning absolute URL:', image.url);
+      return image.url;
+    }
+
+    const finalUrl = `${API_BASE_URL}${image.url}`;
+    console.log('[Carousel] getImageUrl returning relative URL:', finalUrl);
+    return finalUrl;
+  };
+
+  if (loading) {
     return (
-      <div className="w-full h-64 flex items-center justify-center">
-        Loading...
+      <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-xl">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
-  if (!images.length)
+  }
+
+  if (error) {
     return (
-      <div className="w-full h-64 flex items-center justify-center">
-        No images found.
+      <div className="w-full h-64 flex items-center justify-center bg-red-50 rounded-xl">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
+  }
+
+  if (!images.length) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center bg-gray-100 rounded-xl">
+        <p className="text-gray-500">No images available.</p>
+      </div>
+    );
+  }
+
+  const currentImage = images[current];
 
   return (
     <div
@@ -61,37 +156,36 @@ const Carousel = () => {
       onMouseLeave={() => setIsPaused(false)}
     >
       <img
-        src={
-          images[current].url ||
-          images[current].path ||
-          images[current].image ||
-          "/logo.png"
-        }
-        alt={images[current].title || `Yoga Gallery ${current + 1}`}
+        src={getImageUrl(currentImage)}
+        alt={currentImage.title || `Yoga Gallery ${current + 1}`}
         className="w-full h-64 object-cover transition-all duration-700"
+        onError={() => handleImageError(currentImage._id)}
+        loading="lazy"
       />
       <button
         onClick={prev}
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-2xl rounded-full p-2 shadow"
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-2xl rounded-full p-2 shadow opacity-0 group-hover:opacity-100 transition-opacity"
         aria-label="Previous"
       >
         &#8592;
       </button>
       <button
         onClick={next}
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-2xl rounded-full p-2 shadow"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-2xl rounded-full p-2 shadow opacity-0 group-hover:opacity-100 transition-opacity"
         aria-label="Next"
       >
         &#8594;
       </button>
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-2">
         {images.map((_, idx) => (
-          <span
+          <button
             key={idx}
-            className={`inline-block w-3 h-3 rounded-full ${
+            onClick={() => setCurrent(idx)}
+            className={`w-3 h-3 rounded-full transition-colors ${
               idx === current ? "bg-blue-600" : "bg-gray-300"
             }`}
-          ></span>
+            aria-label={`Go to slide ${idx + 1}`}
+          />
         ))}
       </div>
       <div className="absolute top-2 right-4 text-xs text-gray-500 bg-white/70 px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">
