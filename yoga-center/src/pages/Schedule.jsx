@@ -1,7 +1,7 @@
 const days = ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const batches = [
-  { name: "Batch 1", time: "6:00 AM - 7:00 AM" },
-  { name: "Batch 2", time: "7:00 AM - 8:00 AM" },
+  { name: "Batch 1", time: "6 to 7" },
+  { name: "Batch 2", time: "7 to 8" },
 ];
 
 const Schedule = () => (
