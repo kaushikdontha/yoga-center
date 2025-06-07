@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import apiRoutes from './routes/api.js';
+import fs from 'fs';
 
 // For __dirname in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -37,67 +38,6 @@ app.use('/api', cors(corsOptions), apiRoutes);
 // Import and mount API routes first
 import apiRouter from './routes/api.js';
 app.use('/api', apiRouter);
-
-// Serve static files with better error handling
-app.use('/uploads', (req, res, next) => {
-  // Clean and normalize the path to prevent directory traversal
-  const normalizedPath = path.normalize(req.path).replace(/^([\.\/\\])+/, '');
-  const requestedPath = path.join(uploadsDir, normalizedPath);
-
-  // Log every static image request
-  console.log('[STATIC IMAGE REQUEST]', {
-    originalUrl: req.originalUrl,
-    normalizedPath,
-    requestedPath,
-    ip: req.ip,
-    time: new Date().toISOString()
-  });
-
-  // Ensure the requested path is within uploads directory
-  if (!requestedPath.startsWith(uploadsDir)) {
-    console.warn('[STATIC IMAGE] Invalid path requested, serving placeholder', {
-      requestedPath,
-      uploadsDir,
-      ip: req.ip,
-      time: new Date().toISOString()
-    });
-    return res.sendFile(placeholderPath);
-  }
-
-  // Check if file exists
-  if (!fs.existsSync(requestedPath)) {
-    console.warn('[STATIC IMAGE] File not found, serving placeholder', {
-      requestedPath,
-      ip: req.ip,
-      time: new Date().toISOString()
-    });
-    return res.sendFile(placeholderPath);
-  }
-
-  // File exists, serve it
-  console.log('[STATIC IMAGE] Serving file', {
-    requestedPath,
-    ip: req.ip,
-    time: new Date().toISOString()
-  });
-  res.sendFile(requestedPath, (err) => {
-    if (err) {
-      console.error('[STATIC IMAGE] Error sending file', {
-        requestedPath,
-        error: err.message,
-        stack: err.stack,
-        ip: req.ip,
-        time: new Date().toISOString()
-      });
-    } else {
-      console.log('[STATIC IMAGE] File sent successfully', {
-        requestedPath,
-        ip: req.ip,
-        time: new Date().toISOString()
-      });
-    }
-  });
-});
 
 // For any other route, serve index.html (SPA fallback)
 app.get('*', (req, res) => {
