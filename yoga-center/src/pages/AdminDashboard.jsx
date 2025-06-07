@@ -47,14 +47,8 @@ const AdminDashboard = () => {
         console.log('[Photos] Processing photos:', res.data.photos.length);
         // Ensure all photos have the correct URL format and base URL
         const processedPhotos = res.data.photos.map(photo => {
-          const fullUrl = photo.url.startsWith('http://') ? photo.url : `http://localhost:5000${photo.url}`;
-          console.log('[Photos] Processed photo:', {
-            id: photo._id,
-            eventId: photo.eventId,
-            url: fullUrl,
-            isCoverImage: photo.isCoverImage,
-            category: photo.category
-          });
+          // Use relative URL only
+          const fullUrl = photo.url.startsWith('http') ? photo.url : photo.url;
           return {
             ...photo,
             url: fullUrl
