@@ -20,7 +20,7 @@ const AdminPhotos = () => {
       if (response.data.photos) {
         const processedPhotos = response.data.photos.map(photo => ({
           ...photo,
-          url: photo.url.startsWith('http://') ? photo.url : `${photo.url}`
+          url: photo.url.startsWith('http') ? photo.url : photo.url // Use relative URL only
         }));
         setPhotos(processedPhotos);
         setTotalPages(response.data.pagination.totalPages);
