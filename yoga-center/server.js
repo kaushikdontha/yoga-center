@@ -12,6 +12,10 @@ const __dirname = path.dirname(__filename);
 // --- App Setup ---
 const app = express();
 
+// Body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Serve static files from the frontend build first
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -25,10 +29,6 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use('/api', cors(corsOptions), apiRoutes);
-
-// Body parsing middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // Import and mount API routes first
 import apiRouter from './routes/api.js';
