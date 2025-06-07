@@ -9,6 +9,10 @@ import apiRoutes from './routes/api.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Define directories for uploads and placeholder image
+const uploadsDir = path.join(__dirname, 'uploads');
+const placeholderPath = path.join(uploadsDir, 'placeholder.jpg');
+
 // --- App Setup ---
 const app = express();
 
