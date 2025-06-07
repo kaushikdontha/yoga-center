@@ -43,11 +43,10 @@ const Carousel = () => {
 
         // Process the images to ensure URLs are correct
         const processedImages = (response.data.photos || []).map(photo => {
-          const fullUrl = photo.url.startsWith('http') ? photo.url : `${API_BASE_URL}${photo.url}`;
-          console.log('[Carousel] Processing photo URL:', fullUrl, 'Original photo object:', photo);
+          // Use only the relative URL as returned by the backend
           return {
             ...photo,
-            url: fullUrl
+            url: photo.url
           };
         });
 
@@ -102,17 +101,9 @@ const Carousel = () => {
 
   const getImageUrl = (image) => {
     if (imageLoadErrors[image._id]) {
-      return `${API_BASE_URL}/uploads/placeholder.jpg`;
+      return '/uploads/placeholder.jpg';
     }
-
-    if (image.url.startsWith('http')) {
-      console.log('[Carousel] getImageUrl returning absolute URL:', image.url);
-      return image.url;
-    }
-
-    const finalUrl = `${API_BASE_URL}${image.url}`;
-    console.log('[Carousel] getImageUrl returning relative URL:', finalUrl);
-    return finalUrl;
+    return image.url;
   };
 
   if (loading) {
