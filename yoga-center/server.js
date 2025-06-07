@@ -15,6 +15,9 @@ const app = express();
 // Serve static files from the frontend build first
 app.use(express.static(path.join(__dirname, 'dist')));
 
+// Serve uploaded images statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Only apply CORS to API routes
 const corsOptions = {
   origin: '*', // Adjust as needed for production
