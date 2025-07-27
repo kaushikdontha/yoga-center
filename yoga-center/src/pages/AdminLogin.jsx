@@ -19,7 +19,7 @@ const AdminLogin = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const isAdmin = localStorage.getItem("isAdmin");
-    
+
     if (token && isAdmin === "true") {
       navigate("/admin/events");
     }
@@ -31,35 +31,37 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting login with:', { username: username.trim() });
-      
+      console.log("Attempting login with:", { username: username.trim() });
+
       const response = await api.post("/api/auth/login", {
         username: username.trim(),
         password,
       });
 
-      console.log('Login response:', response.data);
+      console.log("Login response:", response.data);
 
       // Validate response structure
-      if (!response.data || typeof response.data !== 'object') {
-        throw new Error('Invalid response format from server');
+      if (!response.data || typeof response.data !== "object") {
+        throw new Error("Invalid response format from server");
       }
 
       // Check for success flag and required data
       if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.message || 'Invalid response structure from server');
+        throw new Error(
+          response.data.message || "Invalid response structure from server"
+        );
       }
 
       const { token, user } = response.data.data;
 
       // Validate token and user data
       if (!token || !user || !user.role) {
-        throw new Error('Missing required data in server response');
+        throw new Error("Missing required data in server response");
       }
 
       // Store auth data
       localStorage.setItem("token", token);
-      localStorage.setItem("isAdmin", user.role === 'admin' ? "true" : "false");
+      localStorage.setItem("isAdmin", user.role === "admin" ? "true" : "false");
       localStorage.setItem("user", JSON.stringify(user));
 
       // Navigate to the return URL or admin dashboard
@@ -67,7 +69,7 @@ const AdminLogin = () => {
       navigate(returnTo, { replace: true });
     } catch (err) {
       console.error("Login error:", err.response || err);
-      
+
       // Handle different error scenarios
       if (err.response?.status === 401) {
         setError("Invalid username or password");
@@ -90,10 +92,6 @@ const AdminLogin = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Admin Login
           </h2>
-          <div className="mt-2 text-center text-sm text-gray-600">
-            <p>Username: Raviyoga</p>
-            <p>Password: RaviYoga@924</p>
-          </div>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
@@ -148,12 +146,6 @@ const AdminLogin = () => {
             >
               {loading ? "Logging in..." : "Sign in"}
             </button>
-          </div>
-
-          <div className="text-sm text-center text-gray-600">
-            Default credentials:<br/>
-            Username: Raviyoga<br/>
-            Password: RaviYoga@924
           </div>
         </form>
       </div>

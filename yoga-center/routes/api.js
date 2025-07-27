@@ -18,6 +18,11 @@ const eventsDir = path.join(uploadsDir, 'events');
 // Create router
 const router = express.Router();
 
+// Simple health check endpoint (no auth required)
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'API is working!' });
+});
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -447,19 +452,41 @@ router.get('/photos', async (req, res) => {
     const events = await Event.find();
     // Flatten all photos from all events and add a timestamp for sorting
     const photos = events.flatMap(event =>
-      (event.photos || []).map(photo => ({
-        _id: photo._id,
-        eventId: event._id,
-        eventTitle: event.title,
-        // Assuming 'category' might be a field in Event or photo for filtering
-        category: event.category, 
-        title: photo.title,
-        description: photo.description,
-        filename: photo.path ? photo.path.split('/').pop() : '',
-        url: photo.url || (photo.path && photo.path.startsWith('/uploads/') ? photo.path : `/uploads/events/${event._id}/photos/${photo.path}`),
-        // Extract timestamp from ObjectId. MongoDB's ObjectId stores creation time.
-        createdAt: photo._id.getTimestamp()
-      }))
+      (event.photos || []).map(photo => {
+        // Ensure proper URL construction
+        let photoUrl = photo.url;
+        
+        // If no URL is provided, construct it from the path
+        if (!photoUrl && photo.path) {
+          if (photo.path.startsWith('/uploads/')) {
+            photoUrl = photo.path;
+          } else {
+            photoUrl = `/uploads/events/${event._id}/photos/${photo.path}`;
+          }
+        }
+        
+        // If still no URL, try to construct from filename
+        if (!photoUrl && photo.filename) {
+          photoUrl = `/uploads/events/${event._id}/photos/${photo.filename}`;
+        }
+        
+        // Ensure URL starts with /
+        if (photoUrl && !photoUrl.startsWith('/')) {
+          photoUrl = `/${photoUrl}`;
+        }
+
+        return {
+          _id: photo._id,
+          eventId: event._id,
+          eventTitle: event.title,
+          category: event.category, 
+          title: photo.title || photo.filename || 'Untitled',
+          description: photo.description || '',
+          filename: photo.filename || (photo.path ? photo.path.split('/').pop() : ''),
+          url: photoUrl,
+          createdAt: photo._id.getTimestamp()
+        };
+      })
     );
 
     // Sort photos by creation date (most recent first)

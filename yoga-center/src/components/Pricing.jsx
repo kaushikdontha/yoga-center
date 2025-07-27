@@ -1,47 +1,51 @@
 const plans = [
   {
     name: 'Monthly',
-    price: '₹1500',
+    price: '₹1,500',
+    period: 'month',
     features: [
-      { name: 'Unlimited Classes', included: true },
+      { name: 'Unlimited Regular Classes', included: true },
       { name: 'All Class Styles', included: true },
-      { name: 'Workshop Priority', included: false },
-      { name: 'Personal Consultation', included: false },
-      { name: 'Free Guest Pass', included: false }
+      { name: 'Basic Amenities Access', included: true },
+
     ]
   },
   {
     name: 'Quarterly',
-    price: '₹3000',
+    price: '₹3,000',
+    period: 'quarter',
     popular: true,
     features: [
-      { name: 'Unlimited Classes', included: true },
+      { name: 'Unlimited Regular Classes', included: true },
       { name: 'All Class Styles', included: true },
-      { name: 'Workshop Priority', included: true },
-      { name: 'Personal Consultation', included: true },
-      { name: 'Free Guest Pass', included: true }
+      { name: 'Basic Amenities Access', included: true},
+
     ]
-  }
+  },
+
 ];
 
 const Pricing = () => {
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-playfair text-center mb-12">Membership Plans</h2>
+        <h2 className="text-4xl font-playfair text-center mb-4">Membership Plans</h2>
+        <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+          Choose the perfect plan for your yoga journey. All plans include access to our state-of-the-art facilities and expert guidance.
+        </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`relative bg-white rounded-2xl p-8 shadow-lg ${
+              className={`relative bg-white rounded-2xl p-8 shadow-lg transition-transform hover:scale-105 ${
                 plan.popular ? 'border-2 border-orange-400' : ''
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-400 text-white 
                               px-4 py-1 rounded-full text-sm font-medium">
-                  🔥 Popular
+                  🔥 Most Popular
                 </div>
               )}
 
@@ -51,7 +55,7 @@ const Pricing = () => {
               {/* Price */}
               <div className="text-center mb-6">
                 <span className="text-4xl font-bold">{plan.price}</span>
-                <span className="text-gray-600">/quarter</span>
+                <span className="text-gray-600">/{plan.period}</span>
               </div>
 
               {/* Features */}
@@ -84,10 +88,15 @@ const Pricing = () => {
         </div>
 
         {/* Additional Info */}
-        <p className="text-center text-gray-600 mt-8 max-w-2xl mx-auto">
-          All plans include access to our community events and basic amenities. 
-          Quarterly plan members get priority booking for special workshops and events.
-        </p>
+        <div className="text-center mt-12 space-y-4">
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            All plans include access to our community events and basic amenities. 
+            Quarterly and Yearly plan members get priority booking for special workshops and events.
+          </p>
+          <p className="text-orange-500 font-medium">
+            ✨ Try a free class before committing to any plan!
+          </p>
+        </div>
       </div>
     </section>
   );

@@ -36,40 +36,38 @@ const AdminDashboard = () => {
 
   const fetchPhotos = async (page = 1) => {
     try {
-      console.log('[Photos] Fetching photos for page:', page);
-      const res = await axios.get(
-        `/api/photos?page=${page}&limit=8`
-      );
-      
-      console.log('[Photos] Response data:', res.data);
-      
+      console.log("[Photos] Fetching photos for page:", page);
+      const res = await axios.get(`/api/photos?page=${page}&limit=8`);
+
+      console.log("[Photos] Response data:", res.data);
+
       if (res.data.photos) {
-        console.log('[Photos] Processing photos:', res.data.photos.length);
+        console.log("[Photos] Processing photos:", res.data.photos.length);
         // Ensure all photos have the correct URL format and base URL
-        const processedPhotos = res.data.photos.map(photo => {
+        const processedPhotos = res.data.photos.map((photo) => {
           // Use relative URL only
-          const fullUrl = photo.url.startsWith('http') ? photo.url : photo.url;
+          const fullUrl = photo.url.startsWith("http") ? photo.url : photo.url;
           return {
             ...photo,
-            url: fullUrl
+            url: fullUrl,
           };
         });
-        
-        console.log('[Photos] All processed photos:', processedPhotos);
+
+        console.log("[Photos] All processed photos:", processedPhotos);
         setPhotos(processedPhotos);
       } else {
-        console.warn('[Photos] No photos array in response');
+        console.warn("[Photos] No photos array in response");
         setPhotos([]);
       }
-      
+
       // Update pagination state
       if (res.data.pagination) {
-        console.log('[Photos] Updating pagination:', res.data.pagination);
+        console.log("[Photos] Updating pagination:", res.data.pagination);
         setTotalPages(res.data.pagination.totalPages);
         setCurrentPage(res.data.pagination.currentPage);
       }
     } catch (err) {
-      console.error('[Photos] Error fetching photos:', err);
+      console.error("[Photos] Error fetching photos:", err);
       setError(err.response?.data?.error || "Failed to fetch photos.");
     }
   };
@@ -121,13 +119,9 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        await Promise.all([
-          fetchPhotos(),
-          fetchVideo(),
-          fetchEvents()
-        ]);
+        await Promise.all([fetchPhotos(), fetchVideo(), fetchEvents()]);
       } catch (error) {
-        console.error('Error fetching initial data:', error);
+        console.error("Error fetching initial data:", error);
       }
     };
     fetchInitialData();
@@ -137,14 +131,16 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (photos.length > 0) {
       // Get unique events from photos
-      const photoEvents = [...new Set(photos.map(photo => photo.event || "General"))];
-      
+      const photoEvents = [
+        ...new Set(photos.map((photo) => photo.event || "General")),
+      ];
+
       // Update allEvents while preserving order and existing events
-      setAllEvents(prev => {
+      setAllEvents((prev) => {
         const newEvents = [...new Set([...prev, ...photoEvents])];
         // Ensure General is always first
         if (newEvents.includes("General")) {
-          return ["General", ...newEvents.filter(e => e !== "General")];
+          return ["General", ...newEvents.filter((e) => e !== "General")];
         }
         return newEvents;
       });
@@ -160,24 +156,24 @@ const AdminDashboard = () => {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) return;
-    
+
     // Get the event value from state
     if (event === "__add_new__") {
       setError("Please select or create an event before uploading.");
       return;
     }
 
-    console.log('[AdminDashboard] Starting image upload:', {
+    console.log("[AdminDashboard] Starting image upload:", {
       filename: file.name,
       size: file.size,
       type: file.type,
       event: event,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     setUploading(true);
     setError("");
-    
+
     const formData = new FormData();
     formData.append("photo", file);
     formData.append("title", file.name);
@@ -185,14 +181,14 @@ const AdminDashboard = () => {
     formData.append("event", event);
 
     try {
-      console.log('[AdminDashboard] Sending upload request to server');
+      console.log("[AdminDashboard] Sending upload request to server");
       const response = await axios.post("/api/photos", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log('[AdminDashboard] Upload successful:', {
+      console.log("[AdminDashboard] Upload successful:", {
         response: response.data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Refresh the photos list
@@ -200,11 +196,11 @@ const AdminDashboard = () => {
       setFile(null);
       setMessage("Photo uploaded successfully!");
     } catch (err) {
-      console.error('[AdminDashboard] Upload error:', {
+      console.error("[AdminDashboard] Upload error:", {
         error: err,
         message: err.message,
         response: err.response?.data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       setError(err.response?.data?.error || "Failed to upload photo");
     } finally {
@@ -222,9 +218,9 @@ const AdminDashboard = () => {
 
     try {
       // Get the authentication token
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error('Authentication required');
+        throw new Error("Authentication required");
       }
 
       const res = await axios.post(
@@ -233,16 +229,16 @@ const AdminDashboard = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
         }
       );
       setVideoUrl(res.data.url);
       setVideoFile(null);
     } catch (err) {
-      console.error('Video upload error:', err);
+      console.error("Video upload error:", err);
       setVideoError(
-        err.response?.status === 401 
+        err.response?.status === 401
           ? "Authentication required. Please log in again."
           : "Video upload failed. Only video files up to 100MB are allowed."
       );
@@ -279,33 +275,31 @@ const AdminDashboard = () => {
       id: photo._id,
       isCoverImage: photo.isCoverImage,
       eventId: photo.eventId,
-      filename: photo.filename
+      filename: photo.filename,
     });
 
     if (!window.confirm("Are you sure you want to delete this photo?")) return;
 
     try {
       // Construct the correct ID for deletion
-      const deleteId = photo.isCoverImage ? `${photo.eventId}_cover` : photo._id;
+      const deleteId = photo.isCoverImage
+        ? `${photo.eventId}_cover`
+        : photo._id;
       console.log("Deleting photo with ID:", deleteId);
 
       await axios.delete(`http://localhost:5000/api/photos/${deleteId}`);
       console.log("Photo deleted successfully");
-      
+
       // Refresh both photos and events
-      await Promise.all([
-        fetchPhotos(currentPage),
-        fetchEvents()
-      ]);
+      await Promise.all([fetchPhotos(currentPage), fetchEvents()]);
 
       // Update local state to remove the deleted photo
-      setPhotos(prevPhotos => prevPhotos.filter(p => p._id !== photo._id));
-      
+      setPhotos((prevPhotos) => prevPhotos.filter((p) => p._id !== photo._id));
+
       // If this was a cover image, refresh the entire event list
       if (photo.isCoverImage) {
         await refreshEventsAndPhotos();
       }
-
     } catch (err) {
       console.error("Delete failed:", err.response?.data || err.message);
       setError("Delete failed. Please try again.");
@@ -344,11 +338,11 @@ const AdminDashboard = () => {
 
     try {
       // Get the authentication token from localStorage
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         setEventActionError("Authentication required. Please log in.");
         // Redirect to login
-        window.location.href = '/admin-login';
+        window.location.href = "/admin-login";
         return;
       }
 
@@ -357,19 +351,23 @@ const AdminDashboard = () => {
         title: trimmed,
         description: `Event: ${trimmed}`,
         date: new Date(),
-        category: 'general'
+        category: "general",
       };
 
-      console.log('Creating new event:', eventData);
+      console.log("Creating new event:", eventData);
 
-      const response = await axios.post('http://localhost:5000/api/events', eventData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        "http://localhost:5000/api/events",
+        eventData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
-      console.log('Event created successfully:', response.data);
+      console.log("Event created successfully:", response.data);
 
       // Update local state
       setOpenEvents((prev) => ({ ...prev, [trimmed]: true }));
@@ -380,88 +378,97 @@ const AdminDashboard = () => {
       // Only fetch events to update the list, don't fetch photos
       await fetchEvents();
     } catch (error) {
-      console.error('Error creating event:', error);
-      
+      console.error("Error creating event:", error);
+
       let errorMessage = "Failed to create event";
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Authentication required. Please log in again.";
         // Redirect to login
-        window.location.href = '/admin-login';
+        window.location.href = "/admin-login";
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setEventActionError(errorMessage);
     }
   };
 
   const handleDeleteEvent = async (evt) => {
     if (!window.confirm(`Delete event '${evt}' and all its photos?`)) return;
-    
+
     try {
       // First try to get the event ID from the photos array using case-insensitive matching
-      const eventPhoto = photos.find(photo => 
-        (photo.event || '').toLowerCase() === evt.toLowerCase() || 
-        (photo.eventTitle || '').toLowerCase() === evt.toLowerCase() || 
-        (photo.title || '').toLowerCase() === evt.toLowerCase()
+      const eventPhoto = photos.find(
+        (photo) =>
+          (photo.event || "").toLowerCase() === evt.toLowerCase() ||
+          (photo.eventTitle || "").toLowerCase() === evt.toLowerCase() ||
+          (photo.title || "").toLowerCase() === evt.toLowerCase()
       );
 
       let eventId;
-      
+
       if (eventPhoto) {
         // If we found a photo, use its eventId
         eventId = eventPhoto.eventId;
       } else {
         // If no photo found, fetch the events list to find the event
-        console.log('No photos found for event, fetching events list...');
-        const response = await axios.get('http://localhost:5000/api/events', {
+        console.log("No photos found for event, fetching events list...");
+        const response = await axios.get("http://localhost:5000/api/events", {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
-        
+
         // Use case-insensitive matching for event title
-        const eventToDelete = response.data.find(event => 
-          (typeof event === 'string' ? event : event.title).toLowerCase() === evt.toLowerCase()
+        const eventToDelete = response.data.find(
+          (event) =>
+            (typeof event === "string" ? event : event.title).toLowerCase() ===
+            evt.toLowerCase()
         );
 
         if (!eventToDelete) {
-          console.error('Event not found:', evt);
-          setMessage({ type: 'error', text: `Could not find event: ${evt}` });
+          console.error("Event not found:", evt);
+          setMessage({ type: "error", text: `Could not find event: ${evt}` });
           return;
         }
 
         eventId = eventToDelete._id;
       }
 
-      console.log('Found event to delete:', {
+      console.log("Found event to delete:", {
         title: evt,
-        eventId: eventId
+        eventId: eventId,
       });
 
       // Get the token from localStorage
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        console.error('No authentication token found');
-        setMessage({ type: 'error', text: 'Authentication required. Please log in again.' });
-        window.location.href = '/admin-login';
+        console.error("No authentication token found");
+        setMessage({
+          type: "error",
+          text: "Authentication required. Please log in again.",
+        });
+        window.location.href = "/admin-login";
         return;
       }
 
       // Delete the event using its MongoDB ID
-      const response = await axios.delete(`http://localhost:5000/api/events/${eventId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await axios.delete(
+        `http://localhost:5000/api/events/${eventId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       if (response.status === 200) {
-        console.log('Event deleted successfully:', response.data);
-        
+        console.log("Event deleted successfully:", response.data);
+
         // Remove from openEvents
         setOpenEvents((prev) => {
           const copy = { ...prev };
@@ -474,29 +481,43 @@ const AdminDashboard = () => {
           const remainingEvents = allEvents.filter((e) => e !== evt);
           setSelectedEvent(remainingEvents[0] || null);
         }
-        
+
         // Refresh the UI
         await refreshEventsAndPhotos();
-        
+
         // Show success message
-        setMessage({ type: 'success', text: `Event "${evt}" deleted successfully` });
+        setMessage({
+          type: "success",
+          text: `Event "${evt}" deleted successfully`,
+        });
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
-      
+      console.error("Error deleting event:", error);
+
       // Handle different error cases
       if (error.response?.status === 401) {
-        setMessage({ type: 'error', text: 'Authentication required. Please log in again.' });
-        window.location.href = '/admin-login';
+        setMessage({
+          type: "error",
+          text: "Authentication required. Please log in again.",
+        });
+        window.location.href = "/admin-login";
       } else if (error.response?.status === 403) {
-        setMessage({ type: 'error', text: 'You do not have permission to delete events.' });
+        setMessage({
+          type: "error",
+          text: "You do not have permission to delete events.",
+        });
       } else if (error.response?.status === 404) {
-        setMessage({ type: 'error', text: 'Event not found. It may have been already deleted.' });
+        setMessage({
+          type: "error",
+          text: "Event not found. It may have been already deleted.",
+        });
         await refreshEventsAndPhotos(); // Refresh list to ensure UI is in sync
       } else {
-        setMessage({ 
-          type: 'error', 
-          text: `Failed to delete event: ${error.response?.data?.error || error.message}` 
+        setMessage({
+          type: "error",
+          text: `Failed to delete event: ${
+            error.response?.data?.error || error.message
+          }`,
         });
       }
     }
@@ -542,60 +563,60 @@ const AdminDashboard = () => {
   const handleImageError = (e, photo) => {
     // Only try placeholder once
     if (e.target.dataset.usedPlaceholder) return;
-    
-    console.error('[AdminDashboard] Image load error:', {
+
+    console.error("[AdminDashboard] Image load error:", {
       photoId: photo._id,
       url: photo.url,
-      event: photo.event || 'General',
-      timestamp: new Date().toISOString()
+      event: photo.event || "General",
+      timestamp: new Date().toISOString(),
     });
-    
-    e.target.dataset.usedPlaceholder = 'true';
-    
+
+    e.target.dataset.usedPlaceholder = "true";
+
     // Try to construct a corrected URL if needed
     let correctedUrl;
     if (photo.eventId && photo.category) {
       correctedUrl = photo.isCoverImage
         ? `/admin/events/${photo.category}/${photo.eventId}/cover/${photo.filename}`
         : `/admin/events/${photo.category}/${photo.eventId}/photos/${photo.filename}`;
-        
+
       if (correctedUrl !== photo.url) {
-        console.log('[AdminDashboard] Attempting with corrected URL:', {
+        console.log("[AdminDashboard] Attempting with corrected URL:", {
           originalUrl: photo.url,
           correctedUrl,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
         e.target.src = correctedUrl;
         return;
       }
     }
-    
+
     // If URL correction didn't work or wasn't possible, use placeholder
-    console.log('[AdminDashboard] Using placeholder image:', {
+    console.log("[AdminDashboard] Using placeholder image:", {
       photoId: photo._id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    e.target.src = '/uploads/general/placeholder.jpg';
+    e.target.src = "/uploads/general/placeholder.jpg";
   };
 
   // Handle successful image loads
   const handleImageLoad = (photo) => {
-    console.log('[AdminDashboard] Image loaded successfully:', {
+    console.log("[AdminDashboard] Image loaded successfully:", {
       photoId: photo._id,
       url: photo.url,
-      event: photo.event || 'General',
-      timestamp: new Date().toISOString()
+      event: photo.event || "General",
+      timestamp: new Date().toISOString(),
     });
   };
 
   const handleEventCreated = (newEvent) => {
-    console.log('New event created:', newEvent);
+    console.log("New event created:", newEvent);
     setShowEventForm(false);
     refreshEventsAndPhotos();
   };
 
   const handleEventError = (error) => {
-    console.error('Error creating event:', error);
+    console.error("Error creating event:", error);
     setError(error);
   };
 
@@ -611,7 +632,7 @@ const AdminDashboard = () => {
             onClick={() => setShowEventForm(!showEventForm)}
             className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
           >
-            {showEventForm ? 'Cancel' : 'Create New Event'}
+            {showEventForm ? "Cancel" : "Create New Event"}
           </button>
         </div>
 
@@ -936,7 +957,7 @@ const AdminDashboard = () => {
                           {photo.title || photo.filename}
                         </div>
                         <div className="text-xs text-gray-500 mb-2">
-                          Event: {photo.event || 'General'}
+                          Event: {photo.event || "General"}
                           <br />
                           Category: {photo.category}
                         </div>
@@ -957,7 +978,8 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                     {/* If no photos, show a message */}
-                    {(!groupedPhotos[evt] || groupedPhotos[evt].length === 0) && (
+                    {(!groupedPhotos[evt] ||
+                      groupedPhotos[evt].length === 0) && (
                       <div className="col-span-full text-center text-gray-400 py-8">
                         No photos in this event yet.
                       </div>

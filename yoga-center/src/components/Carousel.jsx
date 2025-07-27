@@ -28,34 +28,37 @@ const Carousel = () => {
     const controller = new AbortController();
 
     const fetchImages = async () => {
-      console.log('[Carousel] Initiating fetchImages...');
+      console.log("[Carousel] Initiating fetchImages...");
       try {
         setLoading(true);
         setError(null);
 
-        console.log('[Carousel] Making API request to:', `/api/photos`);
+        console.log("[Carousel] Making API request to:", `/api/photos`);
         const response = await axios.get(`/api/photos`, {
           signal: controller.signal,
-          timeout: 5000 // 5 second timeout
+          timeout: 5000, // 5 second timeout
         });
 
         if (!isMounted) return;
 
         // Process the images to ensure URLs are correct
-        const processedImages = (response.data.photos || []).map(photo => {
+        const processedImages = (response.data.photos || []).map((photo) => {
           // Use only the relative URL as returned by the backend
           return {
             ...photo,
-            url: photo.url
+            url: photo.url,
           };
         });
 
-        console.log('Processed carousel images (final setImages value):', processedImages);
+        console.log(
+          "Processed carousel images (final setImages value):",
+          processedImages
+        );
         setImages(processedImages);
       } catch (err) {
         if (!isMounted) return;
-        console.error('Error fetching carousel images:', err);
-        setError('Failed to load images. Please try again later.');
+        console.error("Error fetching carousel images:", err);
+        setError("Failed to load images. Please try again later.");
         setImages([]);
       } finally {
         if (isMounted) {
@@ -78,7 +81,7 @@ const Carousel = () => {
 
     intervalRef.current = setInterval(() => {
       if (mountedRef.current) {
-        setCurrent(prev => (prev + 1) % images.length);
+        setCurrent((prev) => (prev + 1) % images.length);
       }
     }, AUTO_PLAY_INTERVAL);
 
@@ -89,19 +92,20 @@ const Carousel = () => {
     };
   }, [images, isPaused]);
 
-  const next = () => setCurrent(prev => (prev + 1) % images.length);
-  const prev = () => setCurrent(prev => (prev - 1 + images.length) % images.length);
+  const next = () => setCurrent((prev) => (prev + 1) % images.length);
+  const prev = () =>
+    setCurrent((prev) => (prev - 1 + images.length) % images.length);
 
   const handleImageError = (imageId) => {
-    setImageLoadErrors(prev => ({
+    setImageLoadErrors((prev) => ({
       ...prev,
-      [imageId]: true
+      [imageId]: true,
     }));
   };
 
   const getImageUrl = (image) => {
     if (imageLoadErrors[image._id]) {
-      return '/uploads/placeholder.jpg';
+      return "/uploads/placeholder.jpg";
     }
     return image.url;
   };
@@ -149,7 +153,7 @@ const Carousel = () => {
       <img
         src={getImageUrl(currentImage)}
         alt={currentImage.title || `Yoga Gallery ${current + 1}`}
-        className="w-full h-64 object-cover transition-all duration-700"
+        className="w-full h-64 object-contain transition-all duration-700"
         onError={() => handleImageError(currentImage._id)}
         loading="lazy"
       />

@@ -1,28 +1,28 @@
-import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
-import api from '../utils/axios';
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import api from "../utils/axios";
 
 const AdminEvents = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: ''
+    title: "",
+    description: "",
+    date: "",
   });
   const [editingEvent, setEditingEvent] = useState(null);
   const [photoFiles, setPhotoFiles] = useState({}); // { [eventId]: File }
 
   useEffect(() => {
     // Check authentication
-    const token = localStorage.getItem('token');
-    const isAdmin = localStorage.getItem('isAdmin');
-    
-    if (!token || isAdmin !== 'true') {
-      navigate('/admin/login', { replace: true });
+    const token = localStorage.getItem("token");
+    const isAdmin = localStorage.getItem("isAdmin");
+
+    if (!token || isAdmin !== "true") {
+      navigate("/admin/login", { replace: true });
       return;
     }
 
@@ -32,12 +32,12 @@ const AdminEvents = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/events');
+      const response = await api.get("/api/events");
       setEvents(response.data);
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('Error fetching events:', err);
-      setError('Failed to load events. Please try again.');
+      console.error("Error fetching events:", err);
+      setError("Failed to load events. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -45,23 +45,23 @@ const AdminEvents = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     try {
       if (editingEvent) {
         await api.put(`/api/events/${editingEvent._id}`, formData);
       } else {
-        await api.post('/api/events', formData);
+        await api.post("/api/events", formData);
       }
       resetForm();
       await fetchEvents();
     } catch (err) {
-      console.error('Error saving event:', err);
-      setError(err.response?.data?.message || 'Failed to save event');
+      console.error("Error saving event:", err);
+      setError(err.response?.data?.message || "Failed to save event");
     }
   };
 
   const handleDelete = async (eventId) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) {
+    if (!window.confirm("Are you sure you want to delete this event?")) {
       return;
     }
 
@@ -69,8 +69,10 @@ const AdminEvents = () => {
       await api.delete(`/api/events/${eventId}`);
       await fetchEvents();
     } catch (err) {
-      console.error('Error deleting event:', err);
-      setError('Failed to delete event. ' + (err.response?.data?.message || ''));
+      console.error("Error deleting event:", err);
+      setError(
+        "Failed to delete event. " + (err.response?.data?.message || "")
+      );
     }
   };
 
@@ -78,18 +80,18 @@ const AdminEvents = () => {
     const file = photoFiles[eventId];
     if (!file) return;
     const form = new FormData();
-    form.append('photo', file);
+    form.append("photo", file);
     try {
       await api.post(`/api/events/${eventId}/photos`, form);
       setPhotoFiles((prev) => ({ ...prev, [eventId]: null }));
       await fetchEvents();
     } catch {
-      setError('Failed to upload photo.');
+      setError("Failed to upload photo.");
     }
   };
 
   const handleDeletePhoto = async (eventId, photoId) => {
-    if (!window.confirm('Are you sure you want to delete this photo?')) {
+    if (!window.confirm("Are you sure you want to delete this photo?")) {
       return;
     }
 
@@ -97,13 +99,15 @@ const AdminEvents = () => {
       await api.delete(`/api/events/${eventId}/photos/${photoId}`);
       await fetchEvents();
     } catch (err) {
-      console.error('Error deleting photo:', err);
-      setError('Failed to delete photo. ' + (err.response?.data?.message || ''));
+      console.error("Error deleting photo:", err);
+      setError(
+        "Failed to delete photo. " + (err.response?.data?.message || "")
+      );
     }
   };
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', date: '' });
+    setFormData({ title: "", description: "", date: "" });
     setEditingEvent(null);
   };
 
@@ -114,7 +118,7 @@ const AdminEvents = () => {
         <button
           onClick={() => {
             localStorage.clear();
-            navigate('/admin/login', { replace: true });
+            navigate("/admin/login", { replace: true });
           }}
           className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
         >
@@ -130,21 +134,29 @@ const AdminEvents = () => {
 
       <form onSubmit={handleSubmit} className="mb-8 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Title</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Title
+          </label>
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Description
+          </label>
           <textarea
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             rows="4"
             required
@@ -152,7 +164,9 @@ const AdminEvents = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Date</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Date
+          </label>
           <input
             type="date"
             value={formData.date}
@@ -167,7 +181,7 @@ const AdminEvents = () => {
             type="submit"
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
           >
-            {editingEvent ? 'Update Event' : 'Create Event'}
+            {editingEvent ? "Update Event" : "Create Event"}
           </button>
           {editingEvent && (
             <button
@@ -185,12 +199,14 @@ const AdminEvents = () => {
         <div className="text-center py-4">Loading...</div>
       ) : (
         <div className="space-y-8">
-          {events.map(event => (
+          {events.map((event) => (
             <div key={event._id} className="border rounded p-4">
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <h2 className="text-xl font-bold">{event.title}</h2>
-                  <div className="text-gray-600 text-sm">{event.date?.slice(0,10)}</div>
+                  <div className="text-gray-600 text-sm">
+                    {event.date?.slice(0, 10)}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -199,9 +215,9 @@ const AdminEvents = () => {
                       setFormData({
                         title: event.title,
                         description: event.description,
-                        date: event.date?.slice(0,10)
+                        date: event.date?.slice(0, 10),
                       });
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     className="bg-yellow-400 px-3 py-1 rounded"
                   >
@@ -223,7 +239,12 @@ const AdminEvents = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setPhotoFiles(prev => ({ ...prev, [event._id]: e.target.files[0] }))}
+                  onChange={(e) =>
+                    setPhotoFiles((prev) => ({
+                      ...prev,
+                      [event._id]: e.target.files[0],
+                    }))
+                  }
                 />
                 <button
                   onClick={() => handlePhotoUpload(event._id)}
@@ -234,8 +255,11 @@ const AdminEvents = () => {
               </div>
               {/* Photos grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                {event.photos?.map(photo => (
-                  <div key={photo._id} className="border rounded overflow-hidden relative group">
+                {event.photos?.map((photo) => (
+                  <div
+                    key={photo._id}
+                    className="border rounded overflow-hidden relative group"
+                  >
                     <img
                       src={photo.url}
                       alt={photo.title}
@@ -247,13 +271,26 @@ const AdminEvents = () => {
                       className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Delete photo"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </button>
                   </div>
                 ))}
-                {(!event.photos || event.photos.length === 0) && <div className="col-span-full text-gray-400 text-center">No photos yet.</div>}
+                {(!event.photos || event.photos.length === 0) && (
+                  <div className="col-span-full text-gray-400 text-center">
+                    No photos yet.
+                  </div>
+                )}
               </div>
             </div>
           ))}

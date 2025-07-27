@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const testimonials = [
   {
     id: 1,
-    name: 'Priya S.',
+    name: 'Kishore.',
     avatar: '/images/testimonials/priya.jpg',
     quote: 'The morning classes have transformed my daily routine. I feel more energetic and focused throughout the day.',
     duration: '2 months',
@@ -11,16 +11,14 @@ const testimonials = [
   },
   {
     id: 2,
-    name: 'Rahul M.',
-    avatar: '/images/testimonials/rahul.jpg',
+    name: 'Kiran Kumar.',
     quote: 'As a beginner, I was nervous at first, but Ravi\'s patient guidance made me feel comfortable and confident.',
     duration: '6 months',
     rating: 5
   },
   {
     id: 3,
-    name: 'Anjali K.',
-    avatar: '/images/testimonials/anjali.jpg',
+    name: 'Dontha Akhila.',
     quote: 'The community here is amazing. I\'ve made great friends while improving my practice.',
     duration: '1 year',
     rating: 5

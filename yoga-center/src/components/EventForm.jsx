@@ -1,36 +1,36 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const EventForm = ({ onSuccess, onError }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    category: 'workshop',
-    time: '',
-    duration: '',
-    instructor: '',
-    capacity: '',
-    price: ''
+    title: "",
+    description: "",
+    date: "",
+    category: "workshop",
+    time: "",
+    duration: "",
+    instructor: "",
+    capacity: "",
+    price: "",
   });
   const [coverImage, setCoverImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
       if (onError) {
-        onError('Authentication required. Please log in.');
+        onError("Authentication required. Please log in.");
       }
     }
   }, [onError]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -46,20 +46,20 @@ const EventForm = ({ onSuccess, onError }) => {
 
     try {
       // Get the authentication token
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error('Authentication required. Please log in.');
+        throw new Error("Authentication required. Please log in.");
       }
 
       // Validate required fields
       if (!formData.title || !formData.description || !formData.date) {
-        throw new Error('Please fill in all required fields');
+        throw new Error("Please fill in all required fields");
       }
 
       const submitData = new FormData();
-      
+
       // Append all form fields
-      Object.keys(formData).forEach(key => {
+      Object.keys(formData).forEach((key) => {
         if (formData[key]) {
           submitData.append(key, formData[key]);
         }
@@ -67,43 +67,39 @@ const EventForm = ({ onSuccess, onError }) => {
 
       // Add description if not provided
       if (!formData.description) {
-        submitData.append('description', `Event: ${formData.title}`);
+        submitData.append("description", `Event: ${formData.title}`);
       }
 
       // Append cover image if selected
       if (coverImage) {
-        submitData.append('image', coverImage);
+        submitData.append("image", coverImage);
       }
 
-      console.log('Creating event with data:', {
+      console.log("Creating event with data:", {
         ...formData,
-        hasCoverImage: !!coverImage
+        hasCoverImage: !!coverImage,
       });
 
-      const response = await axios.post(
-        '/api/events', 
-        submitData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      const response = await axios.post("/api/events", submitData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      console.log('Event created successfully:', response.data);
-      
+      console.log("Event created successfully:", response.data);
+
       // Reset form
       setFormData({
-        title: '',
-        description: '',
-        date: '',
-        category: 'workshop',
-        time: '',
-        duration: '',
-        instructor: '',
-        capacity: '',
-        price: ''
+        title: "",
+        description: "",
+        date: "",
+        category: "workshop",
+        time: "",
+        duration: "",
+        instructor: "",
+        capacity: "",
+        price: "",
       });
       setCoverImage(null);
 
@@ -112,20 +108,20 @@ const EventForm = ({ onSuccess, onError }) => {
         onSuccess(response.data);
       }
     } catch (error) {
-      console.error('Error creating event:', error);
-      
-      let errorMessage = 'Failed to create event';
-      
+      console.error("Error creating event:", error);
+
+      let errorMessage = "Failed to create event";
+
       if (error.response?.status === 401) {
-        errorMessage = 'Authentication required. Please log in again.';
+        errorMessage = "Authentication required. Please log in again.";
         // Redirect to login
-        window.location.href = '/admin-login';
+        window.location.href = "/admin-login";
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       if (onError) {
         onError(errorMessage);
       }
@@ -138,7 +134,9 @@ const EventForm = ({ onSuccess, onError }) => {
     <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl mx-auto p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Title *</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Title *
+          </label>
           <input
             type="text"
             name="title"
@@ -150,7 +148,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Category *</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Category *
+          </label>
           <select
             name="category"
             value={formData.category}
@@ -166,7 +166,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Date *</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Date *
+          </label>
           <input
             type="date"
             name="date"
@@ -178,7 +180,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Time</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Time
+          </label>
           <input
             type="time"
             name="time"
@@ -189,7 +193,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Duration</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Duration
+          </label>
           <input
             type="text"
             name="duration"
@@ -201,7 +207,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Instructor</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Instructor
+          </label>
           <input
             type="text"
             name="instructor"
@@ -212,7 +220,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Capacity</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Capacity
+          </label>
           <input
             type="number"
             name="capacity"
@@ -224,7 +234,9 @@ const EventForm = ({ onSuccess, onError }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Price</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Price
+          </label>
           <input
             type="number"
             name="price"
@@ -238,7 +250,9 @@ const EventForm = ({ onSuccess, onError }) => {
       </div>
 
       <div className="col-span-full">
-        <label className="block text-sm font-medium text-gray-700">Description *</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Description *
+        </label>
         <textarea
           name="description"
           value={formData.description}
@@ -250,7 +264,9 @@ const EventForm = ({ onSuccess, onError }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Cover Image</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Cover Image
+        </label>
         <input
           type="file"
           accept="image/*"
@@ -269,12 +285,12 @@ const EventForm = ({ onSuccess, onError }) => {
           type="submit"
           disabled={loading}
           className={`px-4 py-2 rounded-md text-white ${
-            loading 
-              ? 'bg-indigo-300 cursor-not-allowed' 
-              : 'bg-indigo-600 hover:bg-indigo-700'
+            loading
+              ? "bg-indigo-300 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-700"
           }`}
         >
-          {loading ? 'Creating...' : 'Create Event'}
+          {loading ? "Creating..." : "Create Event"}
         </button>
       </div>
     </form>

@@ -13,8 +13,6 @@ const Pricing = () => (
         <ul className="text-left text-gray-700 mb-6 space-y-1">
           <li>✔ Unlimited classes for 1 month</li>
           <li>✔ Access to all class styles</li>
-          <li>✔ Free trial class included</li>
-          <li>✔ No joining fee</li>
         </ul>
         <a
           href="/contact"
@@ -35,9 +33,6 @@ const Pricing = () => (
         <ul className="text-left text-gray-700 mb-6 space-y-1">
           <li>✔ Unlimited classes for 3 months</li>
           <li>✔ Access to all class styles</li>
-          <li>✔ Free trial class included</li>
-          <li>✔ No joining fee</li>
-          <li>✔ Priority booking for workshops</li>
         </ul>
         <a
           href="/contact"
@@ -49,7 +44,7 @@ const Pricing = () => (
     </div>
     <div className="text-center text-gray-500 mt-8">
       <span className="font-semibold text-green-700">Special Offer:</span> Refer
-      a friend and get 10% off your next renewal!
+      a friend
     </div>
     <div className="mt-12 max-w-2xl mx-auto bg-blue-50 rounded-xl p-6 text-center text-blue-900">
       <h2 className="text-2xl font-bold mb-2">Need Help Choosing?</h2>

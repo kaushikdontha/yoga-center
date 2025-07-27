@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const AdminContacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -12,29 +12,29 @@ const AdminContacts = () => {
 
   const fetchContacts = async () => {
     try {
-      console.log('[Contacts] Fetching contact messages');
-      const response = await axios.get('/api/contacts');
+      console.log("[Contacts] Fetching contact messages");
+      const response = await axios.get("/api/contacts");
       // Sort contacts by submission date (newest first)
-      const sortedContacts = response.data.sort((a, b) => 
-        new Date(b.submittedAt) - new Date(a.submittedAt)
+      const sortedContacts = response.data.sort(
+        (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)
       );
       setContacts(sortedContacts);
       setLoading(false);
     } catch (err) {
-      console.error('[Contacts] Error fetching contacts:', err);
-      setError('Failed to fetch contact messages');
+      console.error("[Contacts] Error fetching contacts:", err);
+      setError("Failed to fetch contact messages");
       setLoading(false);
     }
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -51,11 +51,14 @@ const AdminContacts = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {contacts.map((contact) => (
-            <div key={contact._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div
+              key={contact._id}
+              className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold text-lg">{contact.name}</h3>
-                  <a 
+                  <a
                     href={`mailto:${contact.email}`}
                     className="text-blue-600 hover:text-blue-800"
                   >
@@ -67,7 +70,9 @@ const AdminContacts = () => {
                 </span>
               </div>
               <div className="mt-3">
-                <p className="text-gray-700 whitespace-pre-wrap">{contact.message}</p>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {contact.message}
+                </p>
               </div>
             </div>
           ))}

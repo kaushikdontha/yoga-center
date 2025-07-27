@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { format } from 'date-fns';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { format } from "date-fns";
 
 const EventGallery = () => {
   const [events, setEvents] = useState([]);
@@ -15,11 +15,11 @@ const EventGallery = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/events');
+      const response = await axios.get("/api/events");
       setEvents(response.data);
     } catch (err) {
-      console.error('Error fetching events:', err);
-      setError('Failed to load events');
+      console.error("Error fetching events:", err);
+      setError("Failed to load events");
     } finally {
       setLoading(false);
     }
@@ -28,7 +28,7 @@ const EventGallery = () => {
   const fetchEventPhotos = async (eventId) => {
     try {
       const response = await axios.get(`/api/events/${eventId}/photos`);
-      const updatedEvents = events.map(event => {
+      const updatedEvents = events.map((event) => {
         if (event._id === eventId) {
           return { ...event, photos: response.data.photos };
         }
@@ -36,18 +36,18 @@ const EventGallery = () => {
       });
       setEvents(updatedEvents);
     } catch (err) {
-      console.error('Error fetching event photos:', err);
+      console.error("Error fetching event photos:", err);
     }
   };
 
   const formatDate = (dateString) => {
     try {
-      if (!dateString) return '';
+      if (!dateString) return "";
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '';
-      return format(date, 'MMMM d, yyyy');
+      if (isNaN(date.getTime())) return "";
+      return format(date, "MMMM d, yyyy");
     } catch (error) {
-      return '';
+      return "";
     }
   };
 
@@ -74,7 +74,7 @@ const EventGallery = () => {
       {/* Event Selection */}
       <div className="mb-8">
         <select
-          value={selectedEvent || ''}
+          value={selectedEvent || ""}
           onChange={(e) => {
             const eventId = e.target.value;
             setSelectedEvent(eventId);
@@ -94,58 +94,61 @@ const EventGallery = () => {
       </div>
 
       {/* Event Details and Photos */}
-      {selectedEvent && events.map(event => {
-        if (event._id === selectedEvent) {
-          return (
-            <div key={event._id} className="space-y-8">
-              {/* Event Details */}
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold mb-2">{event.title}</h2>
-                <p className="text-gray-600 mb-4">{formatDate(event.date)}</p>
-                <p className="max-w-2xl mx-auto">{event.description}</p>
-              </div>
-
-              {/* Event Cover Image */}
-              {event.coverImage && (
-                <div className="aspect-w-16 aspect-h-9 max-w-4xl mx-auto overflow-hidden rounded-lg shadow-lg">
-                  <img
-                    src={event.coverImage.url}
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
+      {selectedEvent &&
+        events.map((event) => {
+          if (event._id === selectedEvent) {
+            return (
+              <div key={event._id} className="space-y-8">
+                {/* Event Details */}
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold mb-2">{event.title}</h2>
+                  <p className="text-gray-600 mb-4">{formatDate(event.date)}</p>
+                  <p className="max-w-2xl mx-auto">{event.description}</p>
                 </div>
-              )}
 
-              {/* Event Photos Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {event.photos?.map((photo) => (
-                  <div
-                    key={photo._id}
-                    className="group relative aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
-                  >
+                {/* Event Cover Image */}
+                {event.coverImage && (
+                  <div className="aspect-w-16 aspect-h-9 max-w-4xl mx-auto overflow-hidden rounded-lg shadow-lg">
                     <img
-                      src={photo.url}
-                      alt={photo.title || event.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      src={event.coverImage.url}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
                     />
-                    {photo.title && (
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity flex items-end">
-                        <div className="p-4 w-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                          <h3 className="text-lg font-semibold">{photo.title}</h3>
-                          {photo.description && (
-                            <p className="text-sm">{photo.description}</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                ))}
+                )}
+
+                {/* Event Photos Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {event.photos?.map((photo) => (
+                    <div
+                      key={photo._id}
+                      className="group relative aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.title || event.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      {photo.title && (
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity flex items-end">
+                          <div className="p-4 w-full text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <h3 className="text-lg font-semibold">
+                              {photo.title}
+                            </h3>
+                            {photo.description && (
+                              <p className="text-sm">{photo.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        }
-        return null;
-      })}
+            );
+          }
+          return null;
+        })}
 
       {/* No Events Message */}
       {events.length === 0 && (

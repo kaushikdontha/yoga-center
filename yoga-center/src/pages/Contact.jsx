@@ -1,6 +1,6 @@
 import { FaPhoneAlt, FaMapMarkerAlt, FaWhatsapp } from "react-icons/fa";
 import ContactForm from "../components/ContactForm";
-import SafeIframe from '../components/SafeIframe';
+import LocationMap from "../components/LocationMap";
 
 const Contact = () => {
   return (
@@ -16,11 +16,7 @@ const Contact = () => {
         {/* Map and Contact Info */}
         <div>
           <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-            <SafeIframe
-              src="https://maps.google.com/maps?q=24.585445,73.712479&z=15&output=embed"
-              title="Yoga Center Location"
-              className="w-full h-[400px] border-0"
-            />
+            <LocationMap />
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -30,8 +26,9 @@ const Contact = () => {
               <div>
                 <h3 className="font-medium text-gray-900">Address</h3>
                 <p className="text-gray-600">
-                  123 Yoga Street<br />
-                  Udaipur, Rajasthan 313001<br />
+                  Sri Durga Estates ground<br />
+                  Quthbullapur, Hyderabad<br />
+                  Telangana 500067<br />
                   India
                 </p>
               </div>
@@ -47,8 +44,8 @@ const Contact = () => {
               <div>
                 <h3 className="font-medium text-gray-900">Hours</h3>
                 <p className="text-gray-600">
-                  Monday - Saturday: 6:00 AM - 8:00 PM<br />
-                  Sunday: 7:00 AM - 6:00 PM
+                  Tuesday - Sunday: 6:00 AM - 8:00 AM<br />
+                  Monday is closed
                 </p>
               </div>
             </div>

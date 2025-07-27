@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const AdminPhotos = () => {
   const [photos, setPhotos] = useState([]);
@@ -14,13 +14,13 @@ const AdminPhotos = () => {
 
   const fetchPhotos = async (page = 1) => {
     try {
-      console.log('[Photos] Fetching photos for page:', page);
+      console.log("[Photos] Fetching photos for page:", page);
       const response = await axios.get(`/api/photos?page=${page}&limit=8`);
-      
+
       if (response.data.photos) {
-        const processedPhotos = response.data.photos.map(photo => ({
+        const processedPhotos = response.data.photos.map((photo) => ({
           ...photo,
-          url: photo.url.startsWith('http') ? photo.url : photo.url // Use relative URL only
+          url: photo.url.startsWith("http") ? photo.url : photo.url, // Use relative URL only
         }));
         setPhotos(processedPhotos);
         setTotalPages(response.data.pagination.totalPages);
@@ -29,7 +29,7 @@ const AdminPhotos = () => {
       }
       setLoading(false);
     } catch (err) {
-      console.error('[Photos] Error fetching photos:', err);
+      console.error("[Photos] Error fetching photos:", err);
       setError("Failed to fetch photos");
       setLoading(false);
     }
@@ -70,7 +70,7 @@ const AdminPhotos = () => {
           </div>
         ))}
       </div>
-      
+
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex justify-center gap-2">

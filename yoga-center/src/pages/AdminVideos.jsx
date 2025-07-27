@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const AdminVideos = () => {
   const [video, setVideo] = useState(null);
@@ -13,20 +13,22 @@ const AdminVideos = () => {
 
   const fetchVideo = async () => {
     try {
-      console.log('[Video] Fetching current video');
-      const response = await axios.get('/api/video');
+      console.log("[Video] Fetching current video");
+      const response = await axios.get("/api/video");
       if (response.data.url) {
         setVideo({
           ...response.data,
-          url: response.data.url.startsWith('http://') ? response.data.url : `http://localhost:5000${response.data.url}`
+          url: response.data.url.startsWith("http://")
+            ? response.data.url
+            : `http://localhost:5000${response.data.url}`,
         });
       } else {
         setVideo(null);
       }
       setLoading(false);
     } catch (err) {
-      console.error('[Video] Error fetching video:', err);
-      setError('Failed to fetch video');
+      console.error("[Video] Error fetching video:", err);
+      setError("Failed to fetch video");
       setLoading(false);
     }
   };
@@ -35,30 +37,30 @@ const AdminVideos = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('video/')) {
-      setError('Please select a valid video file');
+    if (!file.type.startsWith("video/")) {
+      setError("Please select a valid video file");
       return;
     }
 
     const formData = new FormData();
-    formData.append('video', file);
-    formData.append('title', file.name);
-    formData.append('description', 'Uploaded video');
+    formData.append("video", file);
+    formData.append("title", file.name);
+    formData.append("description", "Uploaded video");
 
     setUploading(true);
     setError(null);
 
     try {
-      console.log('[Video] Uploading new video');
-      await axios.post('/api/video', formData, {
+      console.log("[Video] Uploading new video");
+      await axios.post("/api/video", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
       await fetchVideo();
     } catch (err) {
-      console.error('[Video] Error uploading video:', err);
-      setError('Failed to upload video');
+      console.error("[Video] Error uploading video:", err);
+      setError("Failed to upload video");
     } finally {
       setUploading(false);
     }
@@ -70,7 +72,7 @@ const AdminVideos = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Video Management</h1>
-      
+
       {/* Video Upload */}
       <div className="mb-6">
         <label className="block mb-2">
