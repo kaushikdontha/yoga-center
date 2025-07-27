@@ -10,7 +10,7 @@
     "build": "node ./node_modules/vite/bin/vite.js build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
-    "postinstall": "if not exist uploads\\gallery mkdir uploads\\gallery && if exist public\\images\\gallery xcopy /E /I /Y public\\images\\gallery uploads\\gallery"
+    "postinstall": "mkdir -p uploads/gallery && [ -d public/images/gallery ] && cp -r public/images/gallery/* uploads/gallery/ || true"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.1",
