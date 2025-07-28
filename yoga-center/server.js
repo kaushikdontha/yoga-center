@@ -105,7 +105,7 @@ const PORT = process.env.PORT || 3000;
 mongoose
   .connect(
     process.env.MONGODB_URI ||
-      "mongodb+srv://gang2024gang:fvqTmwTxLLUxr69S@cluster0.h92s2c9.mongodb.net/yoga-center?retryWrites=true&w=majority"
+      "mongodb+srv://gang2024gang:7PQBrUVLF3DTXrhc@cluster0.h92s2c9.mongodb.net/yoga-center?retryWrites=true&w=majority&appName=Cluster0"
   ) // .connect() ends here
   .then(() => {
     console.log("Connected to MongoDB successfully");
