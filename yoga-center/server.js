@@ -103,13 +103,10 @@ const PORT = process.env.PORT || 3000;
 // AFTER (Correct)
 // Correct Syntax
 mongoose
-  .connect(
-    process.env.MONGODB_URI ||
-      "mongodb+srv://gang2024gang:7PQBrUVLF3DTXrhc@cluster0.h92s2c9.mongodb.net/yoga-center?retryWrites=true&w=majority&appName=Cluster0"
-  ) // .connect() ends here
+  .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("Connected to MongoDB successfully");
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
