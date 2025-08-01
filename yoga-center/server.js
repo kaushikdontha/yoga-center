@@ -100,8 +100,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-// AFTER (Correct)
-// Correct Syntax
+console.log("MongoDB URI (for debug):", process.env.MONGODB_URI);
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
