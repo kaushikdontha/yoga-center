@@ -278,6 +278,10 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(morgan('combined'));
 
+// Serve frontend build (dist folder)
+const distDir = path.join(__dirname, 'yoga-center', 'dist');
+app.use(express.static(distDir));
+
 // Static file serving with caching
 app.use('/uploads', express.static(uploadsDir, {
   maxAge: '1y',
@@ -1073,6 +1077,12 @@ app.post('/api/contact', [
 });
 
 // Apply error handling middleware
+
+// SPA fallback: serve index.html for all non-API routes
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(distDir, 'index.html'));
+});
+
 app.use(errorHandler);
 
 // Start server
