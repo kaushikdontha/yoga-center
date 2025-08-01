@@ -299,6 +299,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/yoga-cent
   socketTimeoutMS: 45000,
   family: 4
 })
+console.log('DEBUG: process.env.MONGODB_URI =', process.env.MONGODB_URI);
 .then(() => {
   console.log('Connected to MongoDB');
   
