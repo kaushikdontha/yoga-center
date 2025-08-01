@@ -100,8 +100,8 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-const mongoUri = "mongodb+srv://gang2024gang:7PQBrUVLF3DTXrhc@cluster0.h92s2c9.mongodb.net/yoga-center?retryWrites=true&w=majority&appName=Cluster0";
-console.log("MongoDB URI (for debug):", mongoUri);
+const mongoUri = process.env.MONGODB_URI;
+console.log("MongoDB URI from env:", mongoUri);
 mongoose
   .connect(mongoUri)
   .then(() => {
