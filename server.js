@@ -57,6 +57,8 @@ const cacheDir = path.join(uploadsDir, "cache");
 });
 
 // Initialize Express app
+// Import API routes
+import apiRouter from './yoga-center/routes/api.js';
 const app = express();
 
 // Request cache with configurable TTL
@@ -281,6 +283,9 @@ app.use(morgan('combined'));
 // Serve frontend build (dist folder)
 const distDir = path.join(__dirname, 'yoga-center', 'dist');
 app.use(express.static(distDir));
+
+// Use API router for /api endpoints
+app.use('/api', apiRouter);
 
 // Static file serving with caching
 app.use('/uploads', express.static(uploadsDir, {
