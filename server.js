@@ -292,6 +292,7 @@ app.use('/uploads', express.static(uploadsDir, {
 }));
 
 // Connect to MongoDB
+console.log('DEBUG: process.env.MONGODB_URI =', process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/yoga-center', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -299,22 +300,20 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/yoga-cent
   socketTimeoutMS: 45000,
   family: 4
 })
-console.log('DEBUG: process.env.MONGODB_URI =', process.env.MONGODB_URI);
-.then(() => {
-  console.log('Connected to MongoDB');
-  
-  // Create indexes
-  Promise.all([
-    Event.collection.createIndex({ title: 'text', description: 'text' }),
-    Event.collection.createIndex({ category: 1, date: 1 }),
-    Event.collection.createIndex({ createdAt: 1 }),
-    Contact.collection.createIndex({ email: 1 }),
-    Contact.collection.createIndex({ status: 1, createdAt: 1 })
-  ])
-  .then(() => console.log('Database indexes created'))
-  .catch(err => console.error('Error creating indexes:', err));
-})
-.catch(err => console.error('MongoDB connection error:', err));
+  .then(() => {
+    console.log('Connected to MongoDB');
+    // Create indexes
+    Promise.all([
+      Event.collection.createIndex({ title: 'text', description: 'text' }),
+      Event.collection.createIndex({ category: 1, date: 1 }),
+      Event.collection.createIndex({ createdAt: 1 }),
+      Contact.collection.createIndex({ email: 1 }),
+      Contact.collection.createIndex({ status: 1, createdAt: 1 })
+    ])
+    .then(() => console.log('Database indexes created'))
+    .catch(err => console.error('Error creating indexes:', err));
+  })
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // Import models
 import Event from './models/Event.js';
