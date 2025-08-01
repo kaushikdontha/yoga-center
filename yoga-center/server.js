@@ -100,6 +100,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
+console.log('DEBUG: process.env.MONGODB_URI =', process.env.MONGODB_URI);
 const mongoUri = process.env.MONGODB_URI;
 console.log("MongoDB URI from env:", mongoUri);
 mongoose
