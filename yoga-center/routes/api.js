@@ -289,7 +289,13 @@ router.get('/events', async (req, res) => {
     console.log('[API EXIT] GET /events', { count: events.length, ip: req.ip, time: new Date().toISOString() });
     res.json(events);
   } catch (error) {
-    console.error('[API ERROR] GET /events', { error: error.message, stack: error.stack, ip: req.ip, time: new Date().toISOString() });
+    console.error('[API ERROR] GET /events', {
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip,
+      time: new Date().toISOString(),
+      readyState: mongoose.connection.readyState
+    });
     res.status(500).json({
       error: 'Failed to fetch events',
       message: error.message
@@ -523,7 +529,13 @@ router.get('/photos', async (req, res) => {
     console.log('[API DEBUG] /api/photos returning URLs (sorted):', photos.map(p => p.url));
     res.json({ photos });
   } catch (error) {
-    console.error('[API ERROR] GET /api/photos', { error: error.message, stack: error.stack, ip: req.ip, time: new Date().toISOString() });
+    console.error('[API ERROR] GET /api/photos', {
+      error: error.message,
+      stack: error.stack,
+      ip: req.ip,
+      time: new Date().toISOString(),
+      readyState: mongoose.connection.readyState
+    });
     res.status(500).json({ error: 'Failed to fetch photos', message: error.message });
   }
 });

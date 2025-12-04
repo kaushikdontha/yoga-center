@@ -101,18 +101,49 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
+// Connect to MongoDB
 const mongoUri = process.env.MONGODB_URI;
-mongoose
-  .connect(mongoUri)
-  .then(() => {
+
+if (!mongoUri) {
+  console.error("FATAL ERROR: MONGODB_URI is not defined in environment variables");
+  process.exit(1);
+}
+
+// Mongoose connection options for better stability
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+};
+
+mongoose.connection.on("connected", () => {
+  console.log("Mongoose connected to DB");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("Mongoose connection error:", err);
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.log("Mongoose disconnected");
+});
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(mongoUri, mongooseOptions);
     console.log("Connected to MongoDB successfully");
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error("MongoDB connection error:", err);
-    process.exit(1);
+    // Retry logic could go here, but for now let's just log and exit if it's a startup failure
+    // In serverless, we might not want to exit, but for a long-running server we might.
+    // For Vercel/Serverless, the container might be frozen, so we need to handle re-connections carefully.
+  }
+};
+
+// Connect immediately
+connectDB().then(() => {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
   });
+});
 
 
