@@ -36,13 +36,9 @@ const AdminDashboard = () => {
 
   const fetchPhotos = async (page = 1) => {
     try {
-      console.log("[Photos] Fetching photos for page:", page);
       const res = await axios.get(`/api/photos?page=${page}&limit=8`);
 
-      console.log("[Photos] Response data:", res.data);
-
       if (res.data.photos) {
-        console.log("[Photos] Processing photos:", res.data.photos.length);
         // Ensure all photos have the correct URL format and base URL
         const processedPhotos = res.data.photos.map((photo) => {
           // Use relative URL only
@@ -62,7 +58,6 @@ const AdminDashboard = () => {
 
       // Update pagination state
       if (res.data.pagination) {
-        console.log("[Photos] Updating pagination:", res.data.pagination);
         setTotalPages(res.data.pagination.totalPages);
         setCurrentPage(res.data.pagination.currentPage);
       }
@@ -75,7 +70,7 @@ const AdminDashboard = () => {
   // Fetch current video
   const fetchVideo = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/video");
+      const res = await axios.get("/api/video");
       setVideoUrl(res.data.url || "");
     } catch (err) {
       setVideoUrl("");
@@ -85,7 +80,7 @@ const AdminDashboard = () => {
   // Fetch all events from backend
   const fetchEvents = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/events");
+      const res = await axios.get("/api/events");
       // Ensure 'General' is always present and at the top
       let events = res.data || [];
       if (!events.includes("General")) events = ["General", ...events];
@@ -163,13 +158,7 @@ const AdminDashboard = () => {
       return;
     }
 
-    console.log("[AdminDashboard] Starting image upload:", {
-      filename: file.name,
-      size: file.size,
-      type: file.type,
-      event: event,
-      timestamp: new Date().toISOString(),
-    });
+
 
     setUploading(true);
     setError("");
@@ -181,15 +170,11 @@ const AdminDashboard = () => {
     formData.append("event", event);
 
     try {
-      console.log("[AdminDashboard] Sending upload request to server");
       const response = await axios.post("/api/photos", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log("[AdminDashboard] Upload successful:", {
-        response: response.data,
-        timestamp: new Date().toISOString(),
-      });
+
 
       // Refresh the photos list
       await fetchPhotos(currentPage);
@@ -224,7 +209,7 @@ const AdminDashboard = () => {
       }
 
       const res = await axios.post(
-        "http://localhost:5000/api/video",
+        "/api/video",
         formData,
         {
           headers: {
@@ -260,7 +245,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       await axios.put(
-        `http://localhost:5000/api/photos/${editingPhoto._id}`,
+        `/api/photos/${editingPhoto._id}`,
         formData
       );
       setEditingPhoto(null);
@@ -287,7 +272,7 @@ const AdminDashboard = () => {
         : photo._id;
       console.log("Deleting photo with ID:", deleteId);
 
-      await axios.delete(`http://localhost:5000/api/photos/${deleteId}`);
+      await axios.delete(`/api/photos/${deleteId}`);
       console.log("Photo deleted successfully");
 
       // Refresh both photos and events
@@ -357,7 +342,7 @@ const AdminDashboard = () => {
       console.log("Creating new event:", eventData);
 
       const response = await axios.post(
-        "http://localhost:5000/api/events",
+        "/api/events",
         eventData,
         {
           headers: {
@@ -416,7 +401,7 @@ const AdminDashboard = () => {
       } else {
         // If no photo found, fetch the events list to find the event
         console.log("No photos found for event, fetching events list...");
-        const response = await axios.get("http://localhost:5000/api/events", {
+        const response = await axios.get("/api/events", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -457,7 +442,7 @@ const AdminDashboard = () => {
 
       // Delete the event using its MongoDB ID
       const response = await axios.delete(
-        `http://localhost:5000/api/events/${eventId}`,
+        `/api/events/${eventId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -515,9 +500,8 @@ const AdminDashboard = () => {
       } else {
         setMessage({
           type: "error",
-          text: `Failed to delete event: ${
-            error.response?.data?.error || error.message
-          }`,
+          text: `Failed to delete event: ${error.response?.data?.error || error.message
+            }`,
         });
       }
     }
@@ -545,7 +529,7 @@ const AdminDashboard = () => {
       const photosToUpdate = groupedPhotos[evt] || [];
       await Promise.all(
         photosToUpdate.map((photo) =>
-          axios.put(`http://localhost:5000/api/photos/${photo._id}`, {
+          axios.put(`/api/photos/${photo._id}`, {
             ...photo,
             event: trimmed,
           })
@@ -675,7 +659,7 @@ const AdminDashboard = () => {
           <div className="mb-8 w-full max-w-xl">
             <div className="font-semibold mb-2">Current Home Page Video:</div>
             <video
-              src={`http://localhost:5000${videoUrl}`}
+              src={videoUrl}
               controls
               className="w-full rounded shadow"
             />
@@ -891,11 +875,10 @@ const AdminDashboard = () => {
                 <button
                   key={evt}
                   onClick={() => handleEventClick(evt)}
-                  className={`px-4 py-2 rounded-t-lg font-semibold whitespace-nowrap transition-colors duration-200 border-b-2 focus:outline-none ${
-                    selectedEvent === evt
+                  className={`px-4 py-2 rounded-t-lg font-semibold whitespace-nowrap transition-colors duration-200 border-b-2 focus:outline-none ${selectedEvent === evt
                       ? "bg-blue-100 text-blue-700 border-blue-600 shadow"
                       : "bg-gray-100 text-gray-600 border-transparent hover:bg-blue-50"
-                  }`}
+                    }`}
                 >
                   {evt}
                 </button>
@@ -915,19 +898,17 @@ const AdminDashboard = () => {
                 >
                   <span>{evt}</span>
                   <span
-                    className={`ml-2 transition-transform ${
-                      openEvents[evt] ? "rotate-180" : "rotate-0"
-                    }`}
+                    className={`ml-2 transition-transform ${openEvents[evt] ? "rotate-180" : "rotate-0"
+                      }`}
                   >
                     ▼
                   </span>
                 </button>
                 <div
-                  className={`transition-all duration-300 overflow-hidden ${
-                    openEvents[evt]
+                  className={`transition-all duration-300 overflow-hidden ${openEvents[evt]
                       ? "max-h-[2000px] opacity-100"
                       : "max-h-0 opacity-0"
-                  }`}
+                    }`}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
                     {(groupedPhotos[evt] || []).map((photo) => (
@@ -980,10 +961,10 @@ const AdminDashboard = () => {
                     {/* If no photos, show a message */}
                     {(!groupedPhotos[evt] ||
                       groupedPhotos[evt].length === 0) && (
-                      <div className="col-span-full text-center text-gray-400 py-8">
-                        No photos in this event yet.
-                      </div>
-                    )}
+                        <div className="col-span-full text-center text-gray-400 py-8">
+                          No photos in this event yet.
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -998,11 +979,10 @@ const AdminDashboard = () => {
               <button
                 key={page}
                 onClick={() => fetchPhotos(page)}
-                className={`px-3 py-1 rounded ${
-                  currentPage === page
+                className={`px-3 py-1 rounded ${currentPage === page
                     ? "bg-green-600 text-white"
                     : "bg-gray-200 hover:bg-gray-300"
-                }`}
+                  }`}
               >
                 {page}
               </button>

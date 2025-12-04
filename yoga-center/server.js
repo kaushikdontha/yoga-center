@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -100,9 +101,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
-console.log('DEBUG: process.env.MONGODB_URI =', process.env.MONGODB_URI);
 const mongoUri = process.env.MONGODB_URI;
-console.log("MongoDB URI from env:", mongoUri);
 mongoose
   .connect(mongoUri)
   .then(() => {
@@ -116,12 +115,4 @@ mongoose
     process.exit(1);
   });
 
-// Helper function to ensure event directory exists
-const ensureEventDirectory = (event) => {
-  const eventDir = path.join(eventsDir, event.category, event._id.toString());
-  if (!fs.existsSync(eventDir)) {
-    fs.mkdirSync(eventDir, { recursive: true });
-    console.log(`Created directory for event: ${eventDir}`);
-  }
-  return eventDir;
-};
+

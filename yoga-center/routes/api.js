@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import Contact from '../models/Contact.js';
+import User from '../models/User.js';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
@@ -30,11 +31,11 @@ const storage = multer.diskStorage({
       const eventId = req.params.id || 'temp';
       const category = req.body.category || 'general';
       const uploadPath = path.join(eventsDir, category, eventId, 'cover');
-      
+
       // Ensure directory exists
       fs.mkdirSync(uploadPath, { recursive: true });
       console.log(`Upload directory ensured: ${uploadPath}`);
-      
+
       cb(null, uploadPath);
     } catch (error) {
       console.error('Error in multer destination:', error);
@@ -85,7 +86,7 @@ const photoStorage = multer.diskStorage({
   }
 });
 
-const photoUpload = multer({ 
+const photoUpload = multer({
   storage: photoStorage,
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -99,49 +100,28 @@ const photoUpload = multer({
 // Auth Middleware
 const authMiddleware = async (req, res, next) => {
   try {
-    console.log('Auth middleware - checking token');
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
-      console.log('No token provided');
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Authentication required',
         message: 'No token provided'
       });
     }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-      console.log('Token decoded:', decoded);
-      
-      // For the hardcoded admin case
-      if (decoded.userId === '1' && decoded.role === 'admin') {
-        req.user = {
-          _id: '1',
-          username: 'Raviyoga',
-          role: 'admin'
-        };
-        console.log('Admin authenticated');
-        return next();
-      }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
 
-      console.log('Token invalid - not admin');
-      return res.status(401).json({ 
-        error: 'Authentication failed',
-        message: 'Invalid token'
-      });
-    } catch (jwtError) {
-      console.error('JWT verification failed:', jwtError);
-      return res.status(401).json({ 
-        error: 'Authentication failed',
-        message: 'Invalid token'
-      });
+    if (!user) {
+      throw new Error();
     }
+
+    req.user = user;
+    next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(401).json({ 
+    res.status(401).json({
       error: 'Authentication failed',
-      message: error.message
+      message: 'Invalid token'
     });
   }
 };
@@ -151,7 +131,7 @@ const adminMiddleware = async (req, res, next) => {
   console.log('Admin middleware - checking role');
   if (req.user.role !== 'admin') {
     console.log('Access denied - not admin');
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: 'Access denied',
       message: 'Admin privileges required'
     });
@@ -173,12 +153,8 @@ function truncate(obj, maxLen = 300) {
 
 // Login Route
 router.post('/auth/login', async (req, res) => {
-  console.log('[API ENTRY] POST /auth/login', { body: truncate(req.body), ip: req.ip, time: new Date().toISOString() });
   try {
     const { username, password } = req.body;
-
-    // Log request data
-    console.log('Login attempt:', { username });
 
     // Validate input
     if (!username || !password) {
@@ -189,47 +165,49 @@ router.post('/auth/login', async (req, res) => {
       });
     }
 
-    // For the hardcoded admin case
-    if (username.trim() === 'Raviyoga' && password === 'RaviYoga@924') {
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: '1', role: 'admin' },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
-
-      // Log successful login
-      console.log('[API EXIT] POST /auth/login success', { username, ip: req.ip, time: new Date().toISOString() });
-
-      // Return success response with consistent structure
-      return res.status(200).json({
-        success: true,
-        data: {
-          token,
-          user: {
-            id: '1',
-            username: 'Raviyoga',
-            role: 'admin'
-          }
-        },
-        message: 'Login successful'
+    // Find user
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication failed',
+        message: 'Invalid username or password'
       });
     }
 
-    // Log failed attempt
-    console.log('[API EXIT] POST /auth/login fail', { username, ip: req.ip, time: new Date().toISOString() });
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication failed',
+        message: 'Invalid username or password'
+      });
+    }
 
-    // Return error for invalid credentials
-    return res.status(401).json({
-      success: false,
-      error: 'Authentication failed',
-      message: 'Invalid username or password'
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Return success response
+    return res.status(200).json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          role: user.role
+        }
+      },
+      message: 'Login successful'
     });
-  } catch (error) {
-    // Log error details
-    console.error('[API ERROR] POST /auth/login', { error: error.message, stack: error.stack, ip: req.ip, time: new Date().toISOString() });
 
-    // Return error response with consistent structure
+  } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({
       success: false,
       error: 'Login failed',
@@ -238,10 +216,59 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
+// Register Route (Temporary/Admin only)
+router.post('/auth/register', async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+
+    // Check if user exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username already exists'
+      });
+    }
+
+    const user = new User({
+      username,
+      password,
+      role: role || 'user'
+    });
+
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          role: user.role
+        }
+      },
+      message: 'User registered successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Registration failed',
+      message: error.message
+    });
+  }
+});
+
 // Protected Routes
 router.get('/health', authMiddleware, (req, res) => {
   console.log('[API ENTRY] GET /health', { user: req.user, ip: req.ip, time: new Date().toISOString() });
-  res.json({ 
+  res.json({
     status: 'ok',
     user: {
       id: req.user._id,
@@ -263,7 +290,7 @@ router.get('/events', async (req, res) => {
     res.json(events);
   } catch (error) {
     console.error('[API ERROR] GET /events', { error: error.message, stack: error.stack, ip: req.ip, time: new Date().toISOString() });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch events',
       message: error.message
     });
@@ -278,7 +305,7 @@ router.get('/events/:id', async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) {
       console.log('[API EXIT] GET /events/:id not found', { id: req.params.id, ip: req.ip, time: new Date().toISOString() });
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Event not found',
         message: 'The requested event does not exist'
       });
@@ -287,7 +314,7 @@ router.get('/events/:id', async (req, res) => {
     res.json(event);
   } catch (error) {
     console.error('[API ERROR] GET /events/:id', { error: error.message, stack: error.stack, ip: req.ip, time: new Date().toISOString() });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch event',
       message: error.message
     });
@@ -298,13 +325,13 @@ router.get('/events/:id', async (req, res) => {
 router.post('/events', [authMiddleware, adminMiddleware], upload.single('image'), async (req, res) => {
   try {
     console.log('Creating new event:', req.body);
-    
+
     const eventData = { ...req.body };
-    
+
     // Create the event first to get the ID
     const event = new Event(eventData);
     await event.save();
-    
+
     // If file uploaded, set image path and move files
     if (req.file) {
       const category = eventData.category || 'general';
@@ -312,15 +339,15 @@ router.post('/events', [authMiddleware, adminMiddleware], upload.single('image')
       const relativePath = path.relative(uploadsDir, path.join(eventDir, req.file.filename)).replace(/\\/g, '/');
       event.image = `/uploads/${relativePath}`;
       await event.save();
-      
+
       console.log('Image path saved:', event.image);
     }
-    
+
     console.log('Event created:', event._id);
     res.status(201).json(event);
   } catch (error) {
     console.error('Error creating event:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create event',
       message: error.message
     });
@@ -331,12 +358,12 @@ router.post('/events', [authMiddleware, adminMiddleware], upload.single('image')
 router.put('/events/:id', [authMiddleware, adminMiddleware], upload.single('image'), async (req, res) => {
   try {
     console.log('Updating event:', req.params.id);
-    
+
     // Find existing event
     const event = await Event.findById(req.params.id);
     if (!event) {
       console.log('Event not found for update');
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Event not found',
         message: 'The event to update does not exist'
       });
@@ -344,7 +371,7 @@ router.put('/events/:id', [authMiddleware, adminMiddleware], upload.single('imag
 
     // Update event data
     const updateData = { ...req.body };
-    
+
     // If new file uploaded, update image path
     if (req.file) {
       // Delete old image if it exists
@@ -355,7 +382,7 @@ router.put('/events/:id', [authMiddleware, adminMiddleware], upload.single('imag
           console.log('Deleted old image:', oldImagePath);
         }
       }
-      
+
       const category = updateData.category || event.category || 'general';
       const eventDir = path.join(eventsDir, category, event._id.toString(), 'cover');
       const relativePath = path.relative(uploadsDir, path.join(eventDir, req.file.filename)).replace(/\\/g, '/');
@@ -374,7 +401,7 @@ router.put('/events/:id', [authMiddleware, adminMiddleware], upload.single('imag
     res.json(updatedEvent);
   } catch (error) {
     console.error('Error updating event:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update event',
       message: error.message
     });
@@ -386,10 +413,10 @@ router.delete('/events/:id', [authMiddleware, adminMiddleware], async (req, res)
   try {
     console.log('Deleting event:', req.params.id);
     const event = await Event.findById(req.params.id);
-    
+
     if (!event) {
       console.log('Event not found');
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Event not found',
         message: 'The requested event does not exist'
       });
@@ -406,14 +433,14 @@ router.delete('/events/:id', [authMiddleware, adminMiddleware], async (req, res)
     // Delete from database
     await Event.findByIdAndDelete(req.params.id);
     console.log('Event deleted:', req.params.id);
-    
-    res.json({ 
+
+    res.json({
       message: 'Event deleted successfully',
       id: req.params.id
     });
   } catch (error) {
     console.error('Error deleting event:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to delete event',
       message: error.message
     });
@@ -427,7 +454,7 @@ router.post('/contact', async (req, res) => {
     await contact.save();
     res.status(201).json({ message: 'Message received!' });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to save contact message',
       message: error.message
     });
@@ -439,7 +466,7 @@ router.get('/contacts', [authMiddleware, adminMiddleware], async (req, res) => {
     const contacts = await Contact.find().sort({ submittedAt: -1 });
     res.json(contacts);
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch contacts',
       message: error.message
     });
@@ -455,7 +482,7 @@ router.get('/photos', async (req, res) => {
       (event.photos || []).map(photo => {
         // Ensure proper URL construction
         let photoUrl = photo.url;
-        
+
         // If no URL is provided, construct it from the path
         if (!photoUrl && photo.path) {
           if (photo.path.startsWith('/uploads/')) {
@@ -464,12 +491,12 @@ router.get('/photos', async (req, res) => {
             photoUrl = `/uploads/events/${event._id}/photos/${photo.path}`;
           }
         }
-        
+
         // If still no URL, try to construct from filename
         if (!photoUrl && photo.filename) {
           photoUrl = `/uploads/events/${event._id}/photos/${photo.filename}`;
         }
-        
+
         // Ensure URL starts with /
         if (photoUrl && !photoUrl.startsWith('/')) {
           photoUrl = `/${photoUrl}`;
@@ -479,7 +506,7 @@ router.get('/photos', async (req, res) => {
           _id: photo._id,
           eventId: event._id,
           eventTitle: event.title,
-          category: event.category, 
+          category: event.category,
           title: photo.title || photo.filename || 'Untitled',
           description: photo.description || '',
           filename: photo.filename || (photo.path ? photo.path.split('/').pop() : ''),
@@ -524,19 +551,19 @@ router.post('/events/:id/photos', photoUpload.single('photo'), async (req, res) 
 
     // Add photo to event's photos array
     const photoUrl = `/uploads/events/${req.params.id}/photos/${req.file.filename}`;
-    event.photos.push({ 
-      url: photoUrl, 
-      title: req.body.title || '', 
-      description: req.body.description || '' 
+    event.photos.push({
+      url: photoUrl,
+      title: req.body.title || '',
+      description: req.body.description || ''
     });
-    
+
     await event.save();
-    
+
     console.log('[PHOTO UPLOAD] Photo uploaded and saved to event', {
       eventId: req.params.id,
       photoUrl
     });
-    
+
     res.status(201).json({ message: 'Photo uploaded', photo: photoUrl });
   } catch (error) {
     console.error('[API ERROR] POST /events/:id/photos', {
@@ -594,20 +621,20 @@ router.delete('/events/:eventId/photos/:photoId', async (req, res) => {
     try {
       // Get the file path from either url or path property
       const filePath = photo.url || photo.path;
-      
+
       if (!filePath) {
         console.warn('[PHOTO DELETE] No file path found in photo object:', photo);
       } else {
         // Remove leading slash if present
         const relativePath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
         const fullPath = path.join(process.cwd(), relativePath);
-        
+
         console.log('[PHOTO DELETE] Attempting to delete file:', {
           originalPath: filePath,
           relativePath,
           fullPath
         });
-        
+
         if (fs.existsSync(fullPath)) {
           fs.unlinkSync(fullPath);
           console.log('[PHOTO DELETE] File deleted successfully');
@@ -625,12 +652,12 @@ router.delete('/events/:eventId/photos/:photoId', async (req, res) => {
 
     // Remove photo from array using filter
     event.photos = event.photos.filter(p => p._id.toString() !== req.params.photoId);
-    
+
     console.log('[PHOTO DELETE] Updating event in database');
     await event.save();
-    
+
     console.log('[PHOTO DELETE] Photo removed from event successfully');
-    res.json({ 
+    res.json({
       message: 'Photo deleted successfully',
       eventId: event._id,
       photoId: req.params.photoId
@@ -644,8 +671,8 @@ router.delete('/events/:eventId/photos/:photoId', async (req, res) => {
       photoId: req.params.photoId,
       time: new Date().toISOString()
     });
-    res.status(500).json({ 
-      error: 'Failed to delete photo', 
+    res.status(500).json({
+      error: 'Failed to delete photo',
       message: error.message,
       details: error.stack
     });
