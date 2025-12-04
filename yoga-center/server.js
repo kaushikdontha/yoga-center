@@ -20,19 +20,31 @@ if (!mongoUri) {
 
 const connectDB = async () => {
   try {
+    console.log("Attempting to connect to MongoDB...");
     const conn = await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       maxPoolSize: 10,
+      family: 4, // Force IPv4 to avoid potential IPv6 issues in some environments
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Ready State: ${mongoose.connection.readyState}`);
     return conn;
   } catch (error) {
     console.error(`Error: ${error.message}`);
+    console.error(`Full Error:`, error);
     // Don't exit process in serverless/Render, just throw
     throw error;
   }
 };
+
+// Monitor connection state changes
+mongoose.connection.on('connected', () => console.log('Mongoose connected event'));
+mongoose.connection.on('open', () => console.log('Mongoose open event'));
+mongoose.connection.on('disconnected', () => console.log('Mongoose disconnected event'));
+mongoose.connection.on('reconnected', () => console.log('Mongoose reconnected event'));
+mongoose.connection.on('disconnecting', () => console.log('Mongoose disconnecting event'));
+mongoose.connection.on('close', () => console.log('Mongoose close event'));
 
 // --- App Setup ---
 const app = express();
