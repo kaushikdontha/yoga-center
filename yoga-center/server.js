@@ -34,11 +34,16 @@ const connectDB = async () => {
       bufferCommands: false, // Disable Mongoose buffering to fail fast if not connected
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      maxPoolSize: 10, // Maintain up to 10 socket connections
     };
 
     cached.promise = mongoose.connect(mongoUri, opts).then((mongoose) => {
       console.log("Connected to MongoDB successfully");
       return mongoose;
+    }).catch(err => {
+      console.error("MongoDB connection promise failed:", err);
+      cached.promise = null; // Reset promise on failure so we can retry
+      throw err;
     });
   }
 
@@ -46,6 +51,7 @@ const connectDB = async () => {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
+    console.error("MongoDB connection failed:", e);
     throw e;
   }
 
