@@ -10,12 +10,70 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define directories for uploads and placeholder image
-const uploadsDir = path.join(__dirname, "uploads");
-const placeholderPath = path.join(uploadsDir, "placeholder.jpg");
+// --- MongoDB Connection Setup (Cached for Serverless) ---
+const mongoUri = process.env.MONGODB_URI;
+
+if (!mongoUri) {
+  console.error("FATAL ERROR: MONGODB_URI is not defined in environment variables");
+  process.exit(1);
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+const connectDB = async () => {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false, // Disable Mongoose buffering to fail fast if not connected
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+
+    cached.promise = mongoose.connect(mongoUri, opts).then((mongoose) => {
+      console.log("Connected to MongoDB successfully");
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+};
 
 // --- App Setup ---
 const app = express();
+
+// Ensure connection is established before handling requests
+app.use(async (req, res, next) => {
+  // Skip DB connection for static files to improve performance
+  if (req.path.startsWith('/assets') || req.path.startsWith('/uploads') || req.path.match(/\.(css|js|png|jpg|jpeg|svg|ico)$/)) {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    res.status(500).json({ error: "Database connection failed", details: error.message });
+  }
+});
+
+// Define directories for uploads and placeholder image
+const uploadsDir = path.join(__dirname, "uploads");
+const placeholderPath = path.join(uploadsDir, "placeholder.jpg");
 
 // Body parsing middleware
 app.use(express.json());
@@ -100,50 +158,13 @@ app.use((err, req, res, next) => {
 // --- Start Server ---
 const PORT = process.env.PORT || 3000;
 
-// Connect to MongoDB
-// Connect to MongoDB
-const mongoUri = process.env.MONGODB_URI;
-
-if (!mongoUri) {
-  console.error("FATAL ERROR: MONGODB_URI is not defined in environment variables");
-  process.exit(1);
+// Only listen if run directly (not imported as a module)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  connectDB().then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  });
 }
 
-// Mongoose connection options for better stability
-const mongooseOptions = {
-  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-};
-
-mongoose.connection.on("connected", () => {
-  console.log("Mongoose connected to DB");
-});
-
-mongoose.connection.on("error", (err) => {
-  console.error("Mongoose connection error:", err);
-});
-
-mongoose.connection.on("disconnected", () => {
-  console.log("Mongoose disconnected");
-});
-
-const connectDB = async () => {
-  try {
-    await mongoose.connect(mongoUri, mongooseOptions);
-    console.log("Connected to MongoDB successfully");
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-    // Retry logic could go here, but for now let's just log and exit if it's a startup failure
-    // In serverless, we might not want to exit, but for a long-running server we might.
-    // For Vercel/Serverless, the container might be frozen, so we need to handle re-connections carefully.
-  }
-};
-
-// Connect immediately
-connectDB().then(() => {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-});
-
-
+export default app;
