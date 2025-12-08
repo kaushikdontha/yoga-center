@@ -19,27 +19,18 @@ if (!mongoUri) {
 }
 
 const connectDB = async () => {
-  // If already connected, return the existing connection
-  if (mongoose.connection.readyState === 1) {
-    console.log("Using existing MongoDB connection");
-    return mongoose.connection;
-  }
-
   try {
-    console.log("Attempting to connect to MongoDB...");
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000, // Increased to 30s
       socketTimeoutMS: 45000,
       maxPoolSize: 10,
       family: 4, // Force IPv4
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
-    console.log(`MongoDB Ready State: ${mongoose.connection.readyState}`);
     return conn;
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    console.error(`Full Error:`, error);
-    throw error;
+    process.exit(1);
   }
 };
 
