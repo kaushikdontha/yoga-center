@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = ''; // Relative path to use Vite proxy or same origin in production
 
 export const useImageLoader = (imagePath, fallbackImage = '/uploads/placeholder.jpg') => {
   const [imageUrl, setImageUrl] = useState(null);
@@ -23,8 +23,8 @@ export const useImageLoader = (imagePath, fallbackImage = '/uploads/placeholder.
         setError(null);
 
         // Construct the full URL
-        const fullUrl = imagePath?.startsWith('http') 
-          ? imagePath 
+        const fullUrl = imagePath?.startsWith('http')
+          ? imagePath
           : `${API_BASE_URL}${imagePath || fallbackImage}`;
 
         console.log('[ImageLoader] Constructed full URL:', fullUrl);

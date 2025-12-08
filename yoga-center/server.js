@@ -19,13 +19,19 @@ if (!mongoUri) {
 }
 
 const connectDB = async () => {
+  // If already connected, return the existing connection
+  if (mongoose.connection.readyState === 1) {
+    console.log("Using existing MongoDB connection");
+    return mongoose.connection;
+  }
+
   try {
     console.log("Attempting to connect to MongoDB...");
     const conn = await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       maxPoolSize: 10,
-      family: 4, // Force IPv4 to avoid potential IPv6 issues in some environments
+      family: 4, // Force IPv4
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     console.log(`MongoDB Ready State: ${mongoose.connection.readyState}`);
@@ -33,7 +39,6 @@ const connectDB = async () => {
   } catch (error) {
     console.error(`Error: ${error.message}`);
     console.error(`Full Error:`, error);
-    // Don't exit process in serverless/Render, just throw
     throw error;
   }
 };
@@ -41,7 +46,11 @@ const connectDB = async () => {
 // Monitor connection state changes
 mongoose.connection.on('connected', () => console.log('Mongoose connected event'));
 mongoose.connection.on('open', () => console.log('Mongoose open event'));
-mongoose.connection.on('disconnected', () => console.log('Mongoose disconnected event'));
+mongoose.connection.on('disconnected', () => {
+  console.log('Mongoose disconnected event');
+  // Attempt to reconnect if disconnected
+  connectDB().catch(err => console.error("Reconnection failed:", err));
+});
 mongoose.connection.on('reconnected', () => console.log('Mongoose reconnected event'));
 mongoose.connection.on('disconnecting', () => console.log('Mongoose disconnecting event'));
 mongoose.connection.on('close', () => console.log('Mongoose close event'));
@@ -66,18 +75,49 @@ app.use(async (req, res, next) => {
 });
 
 // Define directories for uploads and placeholder image
-const uploadsDir = path.join(__dirname, "uploads");
-const placeholderPath = path.join(uploadsDir, "placeholder.jpg");
+// Define directories for uploads and placeholder image
+// const uploadsDir = path.join(__dirname, "uploads");
+// const placeholderPath = path.join(uploadsDir, "placeholder.jpg");
 
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Debug endpoint - Defined early to avoid routing issues
+app.get("/api/debug-db", async (req, res) => {
+  try {
+    const state = mongoose.connection.readyState;
+    const states = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
+
+    let pingResult = "Not attempted";
+    if (state === 1) {
+      try {
+        await mongoose.connection.db.admin().ping();
+        pingResult = "Success";
+      } catch (e) {
+        pingResult = `Failed: ${e.message}`;
+      }
+    }
+
+    res.json({
+      readyState: state,
+      stateName: states[state],
+      host: mongoose.connection.host,
+      ping: pingResult,
+      env_uri_exists: !!process.env.MONGODB_URI,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
 // Serve static files from the frontend build first
 app.use(express.static(path.join(__dirname, "dist")));
 
 // Serve uploaded images statically
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Serve uploaded images statically - REMOVED for Cloudinary migration
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Import and mount API routes first
 import apiRouter from "./routes/api.js";

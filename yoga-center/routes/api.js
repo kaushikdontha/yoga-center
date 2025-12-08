@@ -24,78 +24,11 @@ router.get('/test', (req, res) => {
   res.json({ success: true, message: 'API is working!' });
 });
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    try {
-      const eventId = req.params.id || 'temp';
-      const category = req.body.category || 'general';
-      const uploadPath = path.join(eventsDir, category, eventId, 'cover');
+// Use memory storage for direct GridFS manipulation
+const storage = multer.memoryStorage();
 
-      // Ensure directory exists
-      fs.mkdirSync(uploadPath, { recursive: true });
-      console.log(`Upload directory ensured: ${uploadPath}`);
-
-      cb(null, uploadPath);
-    } catch (error) {
-      console.error('Error in multer destination:', error);
-      cb(error);
-    }
-  },
-  filename: function (req, file, cb) {
-    try {
-      // Generate a safe filename with original extension
-      const ext = path.extname(file.originalname);
-      const filename = `cover${ext}`;  // Using a fixed name for consistency
-      console.log(`Generated filename: ${filename}`);
-      cb(null, filename);
-    } catch (error) {
-      console.error('Error in multer filename:', error);
-      cb(error);
-    }
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  // Accept images only
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-    return cb(new Error('Only image files (jpg, jpeg, png, gif) are allowed!'), false);
-  }
-  cb(null, true);
-};
-
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
-});
-
-// Configure multer for photo uploads
-const photoStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const eventId = req.params.id;
-    const uploadPath = path.join(process.cwd(), 'uploads', 'events', eventId, 'photos');
-    fs.mkdirSync(uploadPath, { recursive: true });
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const photoUpload = multer({
-  storage: photoStorage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Not an image! Please upload an image.'), false);
-    }
-  }
-});
+const upload = multer({ storage });
+const photoUpload = multer({ storage });
 
 // Auth Middleware
 const authMiddleware = async (req, res, next) => {
@@ -338,12 +271,23 @@ router.post('/events', [authMiddleware, adminMiddleware], upload.single('image')
     const event = new Event(eventData);
     await event.save();
 
-    // If file uploaded, set image path and move files
+    // If file uploaded, upload to GridFS
     if (req.file) {
-      const category = eventData.category || 'general';
-      const eventDir = path.join(eventsDir, category, event._id.toString(), 'cover');
-      const relativePath = path.relative(uploadsDir, path.join(eventDir, req.file.filename)).replace(/\\/g, '/');
-      event.image = `/uploads/${relativePath}`;
+      const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+        bucketName: 'uploads'
+      });
+
+      const filename = `${Date.now()}-${req.file.originalname}`;
+      const uploadStream = bucket.openUploadStream(filename);
+
+      await new Promise((resolve, reject) => {
+        uploadStream.end(req.file.buffer, (error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+
+      event.image = `/api/images/${filename}`;
       await event.save();
 
       console.log('Image path saved:', event.image);
@@ -380,19 +324,21 @@ router.put('/events/:id', [authMiddleware, adminMiddleware], upload.single('imag
 
     // If new file uploaded, update image path
     if (req.file) {
-      // Delete old image if it exists
-      if (event.image) {
-        const oldImagePath = path.join(uploadsDir, event.image.replace('/uploads/', ''));
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-          console.log('Deleted old image:', oldImagePath);
-        }
-      }
+      const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+        bucketName: 'uploads'
+      });
 
-      const category = updateData.category || event.category || 'general';
-      const eventDir = path.join(eventsDir, category, event._id.toString(), 'cover');
-      const relativePath = path.relative(uploadsDir, path.join(eventDir, req.file.filename)).replace(/\\/g, '/');
-      updateData.image = `/uploads/${relativePath}`;
+      const filename = `${Date.now()}-${req.file.originalname}`;
+      const uploadStream = bucket.openUploadStream(filename);
+
+      await new Promise((resolve, reject) => {
+        uploadStream.end(req.file.buffer, (error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+
+      updateData.image = `/api/images/${filename}`;
       console.log('Updated image path:', updateData.image);
     }
 
@@ -429,12 +375,15 @@ router.delete('/events/:id', [authMiddleware, adminMiddleware], async (req, res)
     }
 
     // Delete associated files
+    // TODO: Delete files from Cloudinary
+    /*
     const category = event.category || 'general';
     const eventDir = path.join(eventsDir, category, event._id.toString());
     if (fs.existsSync(eventDir)) {
       fs.rmSync(eventDir, { recursive: true, force: true });
       console.log('Deleted event directory:', eventDir);
     }
+    */
 
     // Delete from database
     await Event.findByIdAndDelete(req.params.id);
@@ -562,7 +511,21 @@ router.post('/events/:id/photos', photoUpload.single('photo'), async (req, res) 
     }
 
     // Add photo to event's photos array
-    const photoUrl = `/uploads/events/${req.params.id}/photos/${req.file.filename}`;
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+      bucketName: 'uploads'
+    });
+
+    const filename = `${Date.now()}-${req.file.originalname}`;
+    const uploadStream = bucket.openUploadStream(filename);
+
+    await new Promise((resolve, reject) => {
+      uploadStream.end(req.file.buffer, (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+
+    const photoUrl = `/api/images/${filename}`;
     event.photos.push({
       url: photoUrl,
       title: req.body.title || '',
@@ -630,6 +593,8 @@ router.delete('/events/:eventId/photos/:photoId', async (req, res) => {
     });
 
     // Remove file from disk
+    // TODO: Delete from Cloudinary
+    /*
     try {
       // Get the file path from either url or path property
       const filePath = photo.url || photo.path;
@@ -661,6 +626,7 @@ router.delete('/events/:eventId/photos/:photoId', async (req, res) => {
       });
       // Continue with database deletion even if file deletion fails
     }
+    */
 
     // Remove photo from array using filter
     event.photos = event.photos.filter(p => p._id.toString() !== req.params.photoId);
@@ -698,6 +664,33 @@ router.get('/gallery', async (req, res) => {
     res.json(events);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch gallery', message: error.message });
+  }
+});
+
+// Image serving route
+router.get('/images/:filename', async (req, res) => {
+  try {
+    const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+      bucketName: 'uploads'
+    });
+
+    const downloadStream = bucket.openDownloadStreamByName(req.params.filename);
+
+    downloadStream.on('data', (chunk) => {
+      res.write(chunk);
+    });
+
+    downloadStream.on('error', (error) => {
+      console.error('Error streaming image:', error);
+      res.status(404).json({ error: 'Image not found' });
+    });
+
+    downloadStream.on('end', () => {
+      res.end();
+    });
+  } catch (error) {
+    console.error('Error serving image:', error);
+    res.status(500).json({ error: 'Failed to serve image' });
   }
 });
 
